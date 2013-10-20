@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+  </head>
+  <body>
+
+    <script src="lseq.js"></script>
+    <script>
+      var lseq = new LSEQ();
+      var id = lseq.insert('a', [0], [31]);
+      var id = lseq.insert('c', [1], [31]);
+      var id = lseq.insert('f', [1], [2]);
+      var id = lseq.insert('g', [1, 0], [2]);
+
+      console.log(lseq.toString());      
+    </script>
+  </body>
+</html>

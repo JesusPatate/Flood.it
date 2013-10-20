@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+  </head>
+  <body>
+
+    <script src="peer.js"></script>
+    <script src="pbcast.js"></script>
+    <script>
+      var pbcast = new PBCast('2');
+      pbcast.join('1');
+      pbcast.send('hello');
+      pbcast.send('hello again');
+      pbcast.send('hello again 2');
+    </script>
+  </body>
+</html>
