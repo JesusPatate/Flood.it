@@ -7,13 +7,18 @@
 
     <script src="lseq.js"></script>
     <script>
-      var lseq = new LSEQ();
+      /*var lseq = new LSEQ();
       var id = lseq.insert('a', [0], [31]);
       var id = lseq.insert('c', [1], [31]);
       var id = lseq.insert('f', [1], [2]);
       var id = lseq.insert('g', [1, 0], [2]);
 
-      console.log(lseq.toString());      
+      console.log(lseq.toString());*/
+      
+      var m = {};
+      var c = {m: 'ok'};
+      m[c] = 'tot';
+      console.log(m[{m: 'ok'}]);
     </script>
   </body>
 </html>
