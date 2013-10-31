@@ -17,17 +17,17 @@ function LSEQNode(value){
  * \brief Returns a textual representation of the node.
  */
 LSEQNode.prototype.toString = function(){
-  var repr = this.value && this.value.toString() || '';
+    var repr = this.value && this.value.toString() || '';
   
-  for(var i=0; i<this.children.length; i++){
-      var child = this.children[i];
+    for(var i=0; i<this.children.length; i++){
+        var child = this.children[i];
       
-      if(child !== undefined){
-        repr += child.toString();
-      }
-  }
+        if(child !== undefined){
+            repr += child.toString();
+        }
+    }
   
-  return repr;
+    return repr;
 };
 
 /**
@@ -70,7 +70,7 @@ function LSEQTree(base, boundary){
  * \param nextId
  *      ID of the element just after the new one.
  */
-LSEQTree.prototype.insert = function(prevId, value, nextId){
+LSEQTree.prototype._insert = function(prevId, value, nextId){
     var depth = 0;
     var lowerBound = prevId[depth];
     var upperBound = nextId[depth];
@@ -81,14 +81,14 @@ LSEQTree.prototype.insert = function(prevId, value, nextId){
         depth++;
 
         if(prevId.length > depth && nextId.length <= depth){
-          lowerBound = prevId[depth];
-          upperBound = nextId[depth];
-          parentId = this._prefix(prevId, depth - 1);
+            lowerBound = prevId[depth];
+            upperBound = nextId[depth];
+            parentId = this._prefix(prevId, depth - 1);
         }
         else if(prevId.length > depth && nextId.length <= depth){
-          lowerBound = prevId[depth];
-          upperBound = this._maxId(depth);
-          parentId = this._prefix(prevId, depth - 1);
+            lowerBound = prevId[depth];
+            upperBound = this._maxId(depth);
+            parentId = this._prefix(prevId, depth - 1);
         }
         else if(prevId.length <= depth && nextId.length <= depth){
             lowerBound = 0;
@@ -96,30 +96,30 @@ LSEQTree.prototype.insert = function(prevId, value, nextId){
             parentId = this._prefix(prevId, depth - 1);
         }
         else{
-          if(prevId[depth - 1] != nextId[depth - 1]){
-            lowerBound = prevId[depth - 1];
-            upperBound = nextId[depth - 1] + 1;
-            parentId = this._prefix(prevId, depth - 2);
-          }
-          else{
-            var jump = nextId.length - 1 - depth;
-            depth = nextId.length - 1;
-            
-            if(nextId[depth] > 1){
-              lowerBound = 0;
-              upperBound = nextId[depth];
-              parentId = this._prefix(nextId, depth - 1);
+            if(prevId[depth - 1] != nextId[depth - 1]){
+                lowerBound = prevId[depth - 1];
+                upperBound = nextId[depth - 1] + 1;
+                parentId = this._prefix(prevId, depth - 2);
             }
             else{
-              lowerBound = 0;
-              upperBound = this._maxId(depth + 1);
-              parentId = prevId.concat([0]);
+                var jump = nextId.length - 1 - depth;
+                depth = nextId.length - 1;
+            
+                if(nextId[depth] > 1){
+                    lowerBound = 0;
+                    upperBound = nextId[depth];
+                    parentId = this._prefix(nextId, depth - 1);
+                }
+                else{
+                    lowerBound = 0;
+                    upperBound = this._maxId(depth + 1);
+                    parentId = prevId.concat([0]);
               
-              for(var i=1; i<=jump; i++){
-                parentId = parentId.concat([0]);
-              }
+                    for(var i=1; i<=jump; i++){
+                        parentId = parentId.concat([0]);
+                    }
+                }
             }
-          }
         }
         
         interval = upperBound - lowerBound - 1;
@@ -149,7 +149,7 @@ LSEQTree.prototype.insert = function(prevId, value, nextId){
  * \param id
  *      id of the element to delete.
  */
-LSEQTree.prototype.delete = function(id){
+LSEQTree.prototype._delete = function(id){
     var parent = this._getNode(this._prefix(id, id.length - 2), function(node){
         node.size--;
     });
@@ -203,7 +203,7 @@ LSEQTree.prototype._getNode = function(id, f){
   
     for(var i=0; i<id.length; i++){        
         if(node.children[id[i]] === undefined){
-          node.children[id[i]] = new LSEQNode(null);
+            node.children[id[i]] = new LSEQNode(null);
         }
         
         node = node.children[id[i]];
@@ -236,45 +236,104 @@ LSEQTree.prototype._prefix = function(id, depth){
  * \brief Returns a textual representation of the tree.
  */
 LSEQTree.prototype.toString = function(){
-  return this._root.toString();
+    return this._root.toString();
 };
 
 /**
  * \brief 
  */
 LSEQTree.prototype._messageDelivered = function(msg){
-  console.log(msg);
+    console.log(msg);
 };
 
-// return l'id pour un offset donné, ne marche pas pour l'instant
-LSEQTree.prototype.getId = function(offset){
-    var id = [];
-    var iter = this._root;
-    var currentOffset = -1;
-
-    while(currentPosition != offset){
-        var child = 0;
-        var branchFound = false;
-        var childIter;
-        var childPos = 0;
-            
-        while(child < iter.children.length && !branchFound){
-            childIter = iter.children[child];
-                
-            if(childIter !== undefined){
-                branchFound = currentPosition + childPos + childIter.size >= position;
-                childPos++;
+/**
+ * \brief Returns the given id for a given offset.
+ *
+ * \param offset
+ *      offset.
+ */
+LSEQTree.prototype._getIdFromOffset = function(offset){
+    var id;
+    
+    if(offset === 0){
+        id = [0];
+    }
+    else if(offset == -1){
+        id = [this._base - 1];
+    }
+    else{
+        id = [];
+        var parentIter = this._root;
+        var currentOffset = 0;
+        
+        // Depth loop.
+        while(currentOffset != offset){
+            var child = 0;
+            var childIter;
+            var childIndex = 0;
+            var branchFound = false;
+	    
+            // Node loop.
+            while(child < parentIter.children.length && !branchFound){
+                childIter = parentIter.children[child];
+	      
+                if(childIter !== undefined){
+                    if(child > 0){
+                        childIndex++;
+                    }
+		
+                    branchFound = currentOffset + childIndex + childIter.size >= offset;
+                    
+                    if(!branchFound){
+                        currentOffset += childIter.size;
+                    }
+                }
+		  
+                child++;
             }
-                
-            child++;
+	    
+	    currentOffset += childIndex;
+            parentIter = childIter;
+            id.push(child - 1);
         }
-            
-        currentPosition = currentPosition + childPos - 1;
-        iter = childIter;
-        id.push(child - 1);
     }
     
     return id;
+};
+
+/**
+ * \brief Insert the given value at the given offset in the tree.
+ *
+ * \param value
+ *      the value to insert.
+ * 
+ * \param offset
+ *      offset.
+ */
+LSEQTree.prototype.insert = function(value, offset){
+    if(offset < 0  || offset > this._root.size + 1){
+        throw new Error('Invalid offset');
+    }
+    
+    var prevId = this._getIdFromOffset(offset);
+    var nextId = this._getIdFromOffset(offset + 1);
+    var newId = this._insert(prevId, value, nextId);
+};
+
+/**
+ * \brief Delete the element at the given offset in the tree.
+ *
+ * \param offset
+ *      offset.
+ */
+LSEQTree.prototype.delete = function(offset){
+    if(offset <= 0  || offset > this._root.size){
+        throw new Error('Invalid offset');
+    }
+    
+    var id = this._getIdFromOffset(offset);
+    console.log(id.toString());
+    this._delete(id);
 };
 
 /**
@@ -300,15 +359,20 @@ LSEQTree.prototype._exists = function(id){
 
 
 
-// tests : boucle dans les deux sens
+// tests : bug à corriger, pointeur null lors de la de la recherche de l'id avant suppression
 
 var t5 = new LSEQTree();
 
-var id = [31];
-
-for(var i=0; i<20; i++){
-    id = t5.insert([0], '|' + i, id);
+for(var i=0; i<19; i++){
+    t5.insert('|' + i, 0);
+    //t5.delete(1);
 }
 
-console.log(t5.toString());
+for(var i=0; i<19; i++){
+    console.log('delete n:' + i);
+    t5.delete(1);
+}
+
+
+//console.log(t5.toString());
 console.log(t5.size());
