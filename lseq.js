@@ -22,7 +22,7 @@ LSEQNode.prototype.toString = function(){
     for(var i=0; i<this.children.length; i++){
         var child = this.children[i];
       
-        if(child !== undefined){
+        if(child != undefined){
             repr += child.toString();
         }
     }
@@ -133,7 +133,7 @@ LSEQTree.prototype._insert = function(prevId, value, nextId){
     });
     
     // The chosen node can already exist in case of deletion.
-    if(parent.children[lastDepthId] === undefined){
+    if(parent.children[lastDepthId] == undefined){
         parent.children[lastDepthId] = new LSEQNode(value);
     }
     else{
@@ -202,7 +202,7 @@ LSEQTree.prototype._getNode = function(id, f){
     fnode(node);
   
     for(var i=0; i<id.length; i++){        
-        if(node.children[id[i]] === undefined){
+        if(node.children[id[i]] == undefined){
             node.children[id[i]] = new LSEQNode(null);
         }
         
@@ -277,7 +277,7 @@ LSEQTree.prototype._getIdFromOffset = function(offset){
             while(child < parentIter.children.length && !branchFound){
                 childIter = parentIter.children[child];
 	      
-                if(childIter !== undefined){
+                if(childIter != undefined){
                     if(child > 0){
                         childIndex++;
                     }
@@ -332,7 +332,6 @@ LSEQTree.prototype.delete = function(offset){
     }
     
     var id = this._getIdFromOffset(offset);
-    console.log(id.toString());
     this._delete(id);
 };
 
@@ -349,7 +348,7 @@ LSEQTree.prototype._exists = function(id){
     var depth = 1;
     var currentNode = this._root[id[0]];
     
-    while(currentNode !== undefined && depth < id.length){
+    while(currentNode != undefined && depth < id.length){
         currentNode = currentNode.children[id[depth]];
         depth++;
     }
@@ -359,20 +358,27 @@ LSEQTree.prototype._exists = function(id){
 
 
 
-// tests : bug à corriger, pointeur null lors de la de la recherche de l'id avant suppression
+// tests :
 
 var t5 = new LSEQTree();
 
 for(var i=0; i<19; i++){
     t5.insert('|' + i, 0);
-    //t5.delete(1);
-}
-
-for(var i=0; i<19; i++){
-    console.log('delete n:' + i);
     t5.delete(1);
 }
 
+/*t5.insert('X', 0);
+var id = t5._getIdFromOffset(1);
+console.log('newId: ' + id);
+t5.delete(1);*/
 
-//console.log(t5.toString());
+
+
+/*for(var i=0; i<19; i++){
+    console.log('delete n:' + i);
+    t5.delete(1);
+}*/
+
+
+console.log(t5.toString());
 console.log(t5.size());
