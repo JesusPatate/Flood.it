@@ -1,3 +1,7 @@
+/****************************************
+ * Dependances : seedrandom.js
+ * *************************************/
+
 
 /**
  * \class LSEQNode
@@ -9,13 +13,16 @@ function LSEQNode(value){
     this.children = [];
 }
 
+/**
+ * \brief Returns a textual representation of the node.
+ */
 LSEQNode.prototype.toString = function(){
   var repr = this.value && this.value.toString() || '';
   
   for(var i=0; i<this.children.length; i++){
       var child = this.children[i];
       
-      if(child){
+      if(child !== undefined){
         repr += child.toString();
       }
   }
@@ -53,14 +60,15 @@ function LSEQTree(base, boundary){
 }
 
 /**
- * \brief Inserts a new node in the tree
+ * \brief Inserts a new element in the tree and return the id attributed for the 
+ * new element.
  *
  * \param prevId
- *      ID of the node just before the new one
+ *      ID of the element just before the new one.
  * \param value
- *      Value of the new node
+ *      Value of the new element.
  * \param nextId
- *      ID of the node just after the new one
+ *      ID of the element just after the new one.
  */
 LSEQTree.prototype.insert = function(prevId, value, nextId){
     var depth = 0;
@@ -123,7 +131,8 @@ LSEQTree.prototype.insert = function(prevId, value, nextId){
     var parent = this._getNode(parentId, function(node){
         node.size++;
     });
-        
+    
+    // The chosen node can already exist in case of deletion.
     if(parent.children[lastDepthId] === undefined){
         parent.children[lastDepthId] = new LSEQNode(value);
     }
@@ -134,13 +143,116 @@ LSEQTree.prototype.insert = function(prevId, value, nextId){
     return parentId.concat(lastDepthId);
 };
 
+/**
+ * \brief Delete the element corresponding to the given id.
+ *
+ * \param id
+ *      id of the element to delete.
+ */
+LSEQTree.prototype.delete = function(id){
+    var parent = this._getNode(this._prefix(id, id.length - 2), function(node){
+        node.size--;
+    });
+    var lastDepthId = id[id.length - 1];
+    var node = parent.children[lastDepthId];
+    node.value = null;
+    
+    // The node corresponding to the element is really removed if it has no 
+    // child.
+    if(node.size == 0){
+        parent.children[lastDepthId] = null;
+    }
+};
+
+/**
+ * \brief Returns the strategy id corresponding to the given depth in the tree.
+ *
+ * \param depth
+ *      the depth in the tree.
+ */
+LSEQTree.prototype._h = function(depth){
+    Math.seedrandom(this._seed * (depth + 1));
+    return Math.round(Math.random());
+};
+
+/**
+ * \brief Returns the maximum authorized child index for a given depth in the
+ * tree.  
+ *
+ * \param depth
+ *      the depth in the tree.
+ */
+LSEQTree.prototype._maxId = function(depth){
+    return this._base * (1 << depth);
+};
+
+/**
+ * \brief Returns the node corresponding to the given id and creates it if it
+ * doesn't exist.
+ *
+ * \param id
+ *      id of the wanted node.
+ * 
+ * \param f
+ *      optional function to apply on every node of the path given by the id.
+ */
+LSEQTree.prototype._getNode = function(id, f){
+    var fnode = f || function(node){};
+    var node = this._root;
+    fnode(node);
+  
+    for(var i=0; i<id.length; i++){        
+        if(node.children[id[i]] === undefined){
+          node.children[id[i]] = new LSEQNode(null);
+        }
+        
+        node = node.children[id[i]];
+        fnode(node);
+    }
+      
+    return node;
+};
+
+/**
+ * \brief Returns the number of element in the tree.
+ */
+LSEQTree.prototype.size = function(){
+    return this._root.size;
+};
+
+/**
+ * \brief Returns the given id truncated to depth.
+ *
+ * \param id
+ *      id to truncate.
+ * 
+ * \param depth
+ */
+LSEQTree.prototype._prefix = function(id, depth){
+    return id.slice(0, depth + 1);
+};
+
+/**
+ * \brief Returns a textual representation of the tree.
+ */
+LSEQTree.prototype.toString = function(){
+  return this._root.toString();
+};
+
+/**
+ * \brief 
+ */
+LSEQTree.prototype._messageDelivered = function(msg){
+  console.log(msg);
+};
+
 // return l'id pour un offset donné, ne marche pas pour l'instant
-LSEQTree.prototype.getId = function(position){
+LSEQTree.prototype.getId = function(offset){
     var id = [];
     var iter = this._root;
-    var currentPosition = -1;
+    var currentOffset = -1;
 
-    while(currentPosition != position){
+    while(currentPosition != offset){
         var child = 0;
         var branchFound = false;
         var childIter;
@@ -165,51 +277,6 @@ LSEQTree.prototype.getId = function(position){
     return id;
 };
 
-
-LSEQTree.prototype.delete = function(id){
-    var parent = this._getNode(this._prefix(id, id.length - 2), function(node){
-        node.size--;
-    });
-    var lastDepthId = id[id.length - 1];
-    var node = parent.children[lastDepthId];
-    node.value = null;
-    
-    if(node.size == 0){
-        parent.children[lastDepthId] = null;
-    }
-};
-
-LSEQTree.prototype._h = function(depth){
-    Math.seedrandom(this._seed * (depth + 1));
-    return Math.round(Math.random());
-};
-
-LSEQTree.prototype._maxId = function(depth){
-    return this._base * (1 << depth);
-};
-
-// Apply function f on every node in the branch
-LSEQTree.prototype._getNode = function(id, f){
-    var fnode = f || function(node){};
-    var node = this._root;
-    fnode(node);
-  
-    for(var i=0; i<id.length; i++){        
-        if(node.children[id[i]] === undefined){
-          node.children[id[i]] = new LSEQNode(null);
-        }
-        
-        node = node.children[id[i]];
-        fnode(node);
-    }
-      
-    return node;
-};
-
-LSEQTree.prototype.size = function(){
-    return this._root.size;
-};
-
 /**
  * \brief Tests if the tree contains an id
  *
@@ -231,51 +298,6 @@ LSEQTree.prototype._exists = function(id){
     return currentNode != undefined;
 };
 
-/**
- * Returns given id truncated to depth.
- */
-LSEQTree.prototype._prefix = function(id, depth){
-    return id.slice(0, depth + 1);
-};
-
-LSEQTree.prototype.toString = function(){
-  return this._root.toString();
-};
-
-LSEQTree.prototype._messageDelivered = function(msg){
-  console.log(msg);
-};
-
-/*var t1 = new LSEQTree();
-t1._root.children[2] = new LSEQNode('a');
-t1._root.children[3] = new LSEQNode('b');
-t1._root.children[2].children[5] = new LSEQNode('c');
-var id = t1.insert([2, 5], 'X', [3]);
-console.log(id.toString());
-console.log(t1.toString())*/
-
-/*var t2 = new LSEQTree();
-t2._root.children[2] = new LSEQNode('a');
-t2._root.children[3] = new LSEQNode('b');
-t2._root.children[2].children[63] = new LSEQNode('c');
-var id = t2.insert([2, 63], 'X', [3]);
-console.log(id.toString());
-console.log(t2.toString());*/
-
-/*var t3 = new LSEQTree();
-t3._root.children[2] = new LSEQNode('a');
-t3._root.children[4] = new LSEQNode('b');
-var id = t3.insert([2], 'X', [4]);
-console.log(id.toString());
-console.log(t3.toString());*/
-
-/*var t4 = new LSEQTree();
-t4._root.children[2] = new LSEQNode('a');
-t4._root.children[3] = new LSEQNode('b');
-t4._root.children[3].children[7] = new LSEQNode('c');
-var id = t4.insert([2], 'X', [3, 7]);
-console.log(id.toString());
-console.log(t4.toString());*/
 
 
 // tests : boucle dans les deux sens
