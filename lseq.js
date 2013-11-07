@@ -128,8 +128,10 @@ LSEQTree.prototype.insert = function(prevId, value, nextId){
     var step = Math.min(this._boundary, interval);
     var strategyId = this._h(depth);
     var lastDepthId = this._strategies[strategyId](step, lowerBound, upperBound);
+    
     var newId = parentId.concat(lastDepthId);
     this.insertWithId(value, newId);    
+    
     return newId;
 };
 
@@ -230,61 +232,6 @@ LSEQTree.prototype.toString = function(){
 };
 
 /**
- * \brief Returns the given id for a given offset.
- *
- * \param offset
- *      offset.
- */
-LSEQTree.prototype.getIdFromOffset = function(offset){
-    var id;
-    
-    if(offset === 0){
-        id = [0];
-    }
-    else if(offset == -1){
-        id = [this._base - 1];
-    }
-    else{
-        id = [];
-        var parentIter = this._root;
-        var currentOffset = 0;
-        
-        // Depth loop.
-        while(currentOffset != offset){
-            var child = 0;
-            var childIter;
-            var childIndex = 0;
-            var branchFound = false;
-	    
-            // Node loop.
-            while(child < parentIter.children.length && !branchFound){
-                childIter = parentIter.children[child];
-	      
-                if(childIter != undefined){
-                    if(child > 0){
-                        childIndex++;
-                    }
-		
-                    branchFound = currentOffset + childIndex + childIter.size >= offset;
-                    
-                    if(!branchFound){
-                        currentOffset += childIter.size;
-                    }
-                }
-		  
-                child++;
-            }
-	    
-			currentOffset += childIndex;
-            parentIter = childIter;
-            id.push(child - 1);
-        }
-    }
-    
-    return id;
-};
-
-/**
  * \brief Tests if contains an id.
  *
  * \param id
@@ -329,6 +276,7 @@ LSEQTree.prototype.insertWithId = function(value, id){
  */
 function LSEQ(){
     this._tree = new LSEQTree();
+    this._offsetToId = [[0],[this._tree._base - 1]];
 }
 
 /**
@@ -345,9 +293,11 @@ LSEQ.prototype.insert = function(value, offset){
         throw new Error('Invalid offset');
     }
     
-    var prevId = this._tree.getIdFromOffset(offset);
-    var nextId = this._tree.getIdFromOffset(offset + 1);
-    return this._tree.insert(prevId, value, nextId);
+    var prevId = this._offsetToId[offset];
+    var nextId = this._offsetToId[offset + 1];
+    var id = this._tree.insert(prevId, value, nextId);
+    
+    this._offsetToId.splice(offset + 1, 0, id);
 };
 
 /**
@@ -372,3 +322,11 @@ LSEQ.prototype.delete = function(offset){
 LSEQ.prototype.messageDelivered = function(msg){
     console.log(msg);
 };
+
+var lseq = new LSEQ();
+
+for (var i = 0 ; i < 1000 ; ++i) {
+	lseq.insert('|' + i, 0);
+}
+
+console.log(lseq._tree.toString());
