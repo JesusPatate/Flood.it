@@ -77,7 +77,7 @@ function LSEQTree(base, boundary){
     // Math.seedrandom();
     // this._seed = Math.floor(Math.random() * (10000 - 100) + 100);
 
-    this._seed = 123654;
+    this._seed = '123654';
     this._root = new LSEQNode(null);
     this._root.children[0] = new LSEQNode(null);
     this._root.children[this._base - 1] = new LSEQNode(null);
@@ -166,7 +166,7 @@ LSEQTree.prototype.insert = function(prevId, value, nextId){
  * \param id
  *      id of the element to delete.
  */
-LSEQTree.prototype.deleteNode = function(id){
+LSEQTree.prototype.delete = function(id){
     var parent = this._getNode(this._prefix(id, id.length - 2), function(node){
         node.size--;
     });
