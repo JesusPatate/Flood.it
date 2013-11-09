@@ -13,6 +13,27 @@ function LSEQNode(value){
     this.children = [];
 }
 
+LSEQNode.prototype.ChildNumber = function(fragment) {
+	var num = 0;
+	var found = false;
+	var i = 0;
+	
+	while (found == false && i < this.children.length) {
+		if(i == fragment) {
+			found = true;
+		}
+		else {
+			if(this.children[i] != undefined) {
+				++num;
+			}
+			
+			++i;
+		}
+	}
+	
+	return found ? num : undefined;
+}
+
 /**
  * \brief Returns a textual representation of the node.
  */
@@ -53,7 +74,10 @@ function LSEQTree(base, boundary){
         return upperBound - offset;
     };
     
-    this._seed = '123456789';
+    // Math.seedrandom();
+    // this._seed = Math.floor(Math.random() * (10000 - 100) + 100);
+
+    this._seed = 123654;
     this._root = new LSEQNode(null);
     this._root.children[0] = new LSEQNode(null);
     this._root.children[this._base - 1] = new LSEQNode(null);
@@ -127,9 +151,10 @@ LSEQTree.prototype.insert = function(prevId, value, nextId){
     
     var step = Math.min(this._boundary, interval);
     var strategyId = this._h(depth);
-    var lastDepthId = this._strategies[strategyId](step, lowerBound, upperBound);
     
+    var lastDepthId = this._strategies[strategyId](step, lowerBound, upperBound);
     var newId = parentId.concat(lastDepthId);
+    
     this.insertWithId(value, newId);    
     
     return newId;
@@ -141,7 +166,7 @@ LSEQTree.prototype.insert = function(prevId, value, nextId){
  * \param id
  *      id of the element to delete.
  */
-LSEQTree.prototype.delete = function(id){
+LSEQTree.prototype.deleteNode = function(id){
     var parent = this._getNode(this._prefix(id, id.length - 2), function(node){
         node.size--;
     });
@@ -298,6 +323,47 @@ LSEQ.prototype.insert = function(value, offset){
     var id = this._tree.insert(prevId, value, nextId);
     
     this._offsetToId.splice(offset + 1, 0, id);
+    
+    return id;
+};
+
+/**
+ * \brief Insert a new node with given id and value.
+ *
+ * \param value
+ *      Value of the new node.
+ * 
+ * \param id
+ *      ID of the new node.
+ */
+LSEQ.prototype.foreignInsert = function(value, id) {
+	this._tree.insertWithId(value, id);
+
+    // Get parent node
+    
+	var parentId = id.slice(0, id.length - 1);
+    var parent = this._tree._getNode(parentId);
+
+    // Get not empty parent node
+    // [0.0.0] => []
+    // [12.3.0] => [12.3]
+
+    var i = parentId.length - 1;
+
+    while(parentId[i] == 0) {
+        parentId.pop();
+        i = parentId.length - 1;
+    }
+
+    // Compute new node offset
+    
+	var parentOffset = this._getOffset(parentId);
+	var num = parent.ChildNumber(id[id.length - 1]);
+	var newOffset = parentOffset + num + 1;
+    
+	this._offsetToId[newOffset] = id;
+	
+	return newOffset;
 };
 
 /**
@@ -311,9 +377,114 @@ LSEQ.prototype.delete = function(offset){
         throw new Error('Invalid offset');
     }
     
-    var id = this._tree.getIdFromOffset(offset);
+    var id = this._offsetToId[offset];
     this._tree.delete(id);
     return id;
+};
+
+/**
+ * \brief Delete the element with the given id.
+ *
+ * \param id
+ *      ID of the node to delete.
+ */
+LSEQ.prototype.foreignDelete = function(id){
+    this._tree.delete(id);
+};
+
+LSEQ.prototype._getOffset = function(id) {
+	var offset = 0;
+	var lowerIdx = 0;
+	var upperIdx = this._offsetToId.length - 1;
+	var found = false;
+	
+	if(id.length == 0) {
+		found = true;
+		offset = 0;
+	}
+	
+	else {
+		while((found == false) && (lowerIdx <= upperIdx)) {
+			var midIdx = Math.floor((lowerIdx + upperIdx) / 2);
+			var midId = this._offsetToId[midIdx];
+			
+			var comp = this._compareIDs(id, midId);
+			
+			if(comp < 0) {
+				upperIdx = midIdx;
+			}
+			else if (comp > 0) {
+				lowerIdx = midIdx + 1;
+			}
+			else {
+				found = true;
+			}
+		}
+		
+		if (midId == id) {
+			offset = midIdx;
+		}
+		else {
+			offset = undefined;
+		}
+	}
+	
+	return offset;
+};
+
+/**
+ * Compare 2 LSEQ node ids.
+ * 
+ * \param id1 A node ID
+ * \param id2 A node ID
+ * 
+ * \return 
+ * <ul>
+ * <li>-1 if id1 < id2</li>
+ * <li>0 if id1 = id2</li>
+ * <li>1 if id1 > id2</li><
+ * /ul>
+ */
+LSEQ.prototype._compareIDs = function(id1, id2) {
+	var res = 0;
+	var stop = false;
+	var i = 0;
+	
+	while (stop == false) {
+		var fragment1 = id1[i];
+		var fragment2 = id2[i];
+		
+		if (fragment1 == undefined && fragment2 == undefined) {
+			stop = true;
+			res = 0;
+		}
+		else if (fragment1 == undefined) {
+			stop = true;
+			res = -1;
+		}
+		else if (fragment2 == undefined) {
+			stop = true;
+			res = 1;
+		}
+		else {
+			var diff = fragment1 - fragment2;
+			
+			if (diff > 0) {
+				stop = true;
+				res = 1;
+			}
+			else if (diff < 0) {
+				stop = true;
+				res = -1;
+			}
+		}
+		
+		if(stop == false) {
+			++i;
+		}
+	}
+	
+	return res;
 };
 
 /**
@@ -324,9 +495,17 @@ LSEQ.prototype.messageDelivered = function(msg){
 };
 
 var lseq = new LSEQ();
+var x;
 
-for (var i = 0 ; i < 1000 ; ++i) {
-	lseq.insert('|' + i, 0);
+for (var i = 0 ; i < 10 ; ++i) {
+	var id = lseq.insert('|' + i, 0);
+	
+	if(i == 5) {
+		x = id.slice(0);
+	}
 }
+
+x[x.length-1] += 1;
+lseq.foreignInsert("|a", x);
 
 console.log(lseq._tree.toString());
