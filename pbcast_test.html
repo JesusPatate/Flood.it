@@ -4,11 +4,24 @@
     <meta charset="UTF-8">
   </head>
   <body>
-
+	<script src="seedrandom.js"></script>
+	<script src="md5.js"></script>
+	<script src="hashfunctiongen.js"></script>
+	<script src="utils.js"></script>	
+	<script src="eventemitter.js"></script>
     <script src="peer.js"></script>
     <script src="pbcast.js"></script>
     <script>
-      var pbcast = new PBCast('1');
+		var pbcast = new PBCast();
+		
+		pbcast.on('ready', function(id){
+			console.log('Prêt: ' + id);
+		});
+		
+		pbcast.on('deliver', function(message){
+			console.log(JSON.stringify(message));
+		});
+      
     </script>
   </body>
 </html>
