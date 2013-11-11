@@ -3,30 +3,29 @@ Dependences :
 * peer.js,
 * eventemitter.js,
 * utils.js,
-* hashfunctiongen.js
+* entrieshash.js
 *******************************************/
 
 /*Interface fournie :
   - send(message);
   - getId();
+  - id;
   - ready;
   - on('ready', function(id){});
   - on('deliver', function(message){});
 ***********************************************/
 
 
-// TODO: transférer la fonction de hashage
 // TODO: faire fonctionner la fonction hashage à partir du rapport de l'année dernière
 // TODO: comment transmettre les données d'initialisation, le document
 // TODO: améliorer le constructeur avec les paramètres optionnels
 // TODO: détecter les erreurs de causalité
 // TODO: commenter
-// TODO: tester la mise en cache
 
 
 /**
  * \class QVC
- * \brief ...
+ * \brief An object that represents a quasi vector clocks.
  */
 function QVC(clocks, entries){
 	this._clocks = clocks;
@@ -34,7 +33,17 @@ function QVC(clocks, entries){
 }
 
 /**
- * \brief ...
+ * \brief Constructs a qvc from a litteral object.
+ *
+ * \param object
+ * 		litteral object containing the attributes of a qvc.
+ */
+QVC.fromLitteralObject = function(object){
+	return new QVC(object.clocks, object.entries);
+};
+
+/**
+ * \brief Increments the qvc.
  */
 QVC.prototype.increment = function(){
 	for(var entry in this._entries){
@@ -43,10 +52,10 @@ QVC.prototype.increment = function(){
 };
 
 /**
- * \brief ...
+ * \brief Increments the qvc in fonction of an other qvc.
  *
  * \param qvc
- *      ...
+ *      
  */
 QVC.prototype.incrementFrom = function(qvc){
 	for(var entry in qvc._entries){
@@ -55,10 +64,11 @@ QVC.prototype.incrementFrom = function(qvc){
 };
 
 /**
- * \brief ...
+ * \brief Returns true if the qvc is causally ready in relation to a
+ * referential qvc.
  *
  * \param reference
- *      ...
+ *      the referencial qvc.
  */
 QVC.prototype.isCausallyReady = function(reference){
 	var ready = true;
@@ -78,6 +88,13 @@ QVC.prototype.isCausallyReady = function(reference){
 	return ready;
 };
 
+/**
+ * \brief Returns the litteral object reprensentation of a qvc.
+ */
+QVC.prototype.toLitteralObject = function(){		
+	return {clocks: this._clocks, entries: this._entries};
+};
+
 
 /**
  * \class PBCast
@@ -87,9 +104,10 @@ function PBCast(r, k, peerServer, joinId){
 	var self = this;
 	EventEmitter.call(this);
     this._peer;
+    this.id;
     this._connections = new Map();
     this._qvc;
-    this._hashEntriesFunction;
+    this._entriesHash;
     this._notDelivered = [];
     this._delivered = [];
     this.ready = false;
@@ -117,8 +135,8 @@ function PBCast(r, k, peerServer, joinId){
 		
 		// On crée un nouveau groupe.
 		else{
-			var generator = new HashFunctionGenerator();
-			self._hashEntriesFunction = generator.generate(r || PBCast.DEFAULT_R, k || PBCast.DEFAULT_K);
+			var generator = new EntriesHashGenerator();
+			self._entriesHash = generator.generate(r || PBCast.DEFAULT_R, k || PBCast.DEFAULT_K);
 			initialize();
 		}
 	}
@@ -152,7 +170,7 @@ function PBCast(r, k, peerServer, joinId){
 	
 	function handleQuit(connection){
 		return function(){			
-			self._connections.delete(connection.peer);
+			self._connections.remove(connection.peer);
 		};
 	}
 	
@@ -180,8 +198,7 @@ function PBCast(r, k, peerServer, joinId){
 			}
 		}
 					
-		//requestConnection.send({type: PBCast.JOIN_RESP, data: {ids: ids, hashFunction: self._hashEntriesFunction}});
-		requestConnection.send({type: PBCast.JOIN_RESP, data: {ids: knownIds, hashFunction: ''}});
+		requestConnection.send({type: PBCast.JOIN_RESP, data: {ids: knownIds, entriesHash: self._entriesHash.toLitteralObject()}});
 		// renvoyer les données d'initialisation
 	}
 	
@@ -193,13 +210,12 @@ function PBCast(r, k, peerServer, joinId){
 				handleOpenedConnection(connection);
 			});
 		}
-			
-		// TODO: voir comment transférer la fonction de hash		
+					
 		// Get hash function of the group.
-		//self._hashEntriesFunction = data.hashFunction;
+		//self._entriesHash = EntriesHash.fromLitteralObject(data.entrieshash);
 		
-		var generator = new HashFunctionGenerator();
-		self._hashEntriesFunction = generator.generate(r || PBCast.DEFAULT_R, k || PBCast.DEFAULT_K);
+		var generator = new EntriesHashGenerator();
+		self._entriesHash = generator.generate(r || PBCast.DEFAULT_R, k || PBCast.DEFAULT_K);
 					
 		// Get other initialization data
 					
@@ -209,11 +225,12 @@ function PBCast(r, k, peerServer, joinId){
 	
 	function initialize(){
 		var clocks = initializeClocks(r || PBCast.DEFAULT_R);
-		var entries = self._hashEntriesFunction(self._peer.id);
+		var entries = self._entriesHash.hash(self._peer.id);
 		self._qvc = new QVC(clocks, entries);
 		self.ready = true;
 		emptyCache();
-		self.emit('ready', self._peer.id);
+		self.id = self._peer.id;
+		self.emit('ready', self.id);
 	}
 	
 	function initializeClocks(r){
@@ -234,7 +251,7 @@ function PBCast(r, k, peerServer, joinId){
 	}
 	
 	function handleMessage(message){
-		var qvc = new QVC(message.clocks, message.entries);
+		var qvc = QVC.fromLitteralObject(message.qvc);
 	
 		if(qvc.isCausallyReady(self._qvc)){
 			self._qvc.incrementFrom(qvc);
@@ -281,7 +298,13 @@ PBCast.QUIT = 3;
  * \brief ...
  */
 PBCast.prototype.getId = function(){
-	return this._peer.id;
+	var id;
+	
+	if(this.ready){
+		id = this._peer.id;
+	}
+	
+	return id;
 };
 
 /**
@@ -294,7 +317,7 @@ PBCast.prototype.send = function(message){
 	if(this.ready){
 		console.log('envoyé');
 		this._qvc.increment();
-		this._broadcast({type: PBCast.MSG, data: {clocks: this._qvc._clocks, entries: this._qvc._entries, msg: message}});
+		this._broadcast({type: PBCast.MSG, data: {qvc: this._qvc.toLitteralObject(), msg: message}});
 	}
 	else{
 		console.log('mis en cache');
