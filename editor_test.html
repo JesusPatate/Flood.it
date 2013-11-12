@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <style>
+		body {
+        background-color: #81DEFF;
+      }
+      #editor {
+        background-color: white;
+        padding: 10px;
+        margin-bottom: 20px;
+        width:300px;
+        height:250px;
+        overflow: auto;
+      }
+    </style>
+  </head>
+  <body>
+	  <div id="editor" contenteditable="true"></div>
+	  
+	<script src="eventemitter.js"></script>
+	<script src="editor.js"></script>
+    <script>
+      var editor = new Editor('editor');
+    </script>
+  </body>
+</html>
