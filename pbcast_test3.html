@@ -15,12 +15,11 @@
 		var pbcast = new PBCast(0, 0, {host: PBCast.DEFAULT_HOST, port: PBCast.DEFAULT_PORT}, 'ynplp1nuoorjxlxr');
 		pbcast.on('ready', function(id){
 			console.log('Prêt: ' + pbcast.id);
-			//pbcast.send('salut');
+			pbcast.send('HEY !!!');
 		});
 		
-		pbcast.on('deliver', function(message){
-			console.log(JSON.stringify(message));
-		});
+		pbcast.send('salut');
+		pbcast.send('je suis là !!!');
       
     </script>
   </body>

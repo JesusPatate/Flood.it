@@ -88,3 +88,55 @@ Map.prototype.size = function(){
 Map.prototype.iterator = function(){
 	return Iterator(this._elements);
 };
+
+
+/**
+ * \class Queue
+ * \brief A collection designed for holding elements prior to processing. 
+ */
+function Queue(capacity){
+	this._capacity = capacity;
+	this._elements = [];
+}
+
+/**
+ * \brief Retrieves, but does not remove, the head of this queue, or
+ *  returns undefined if this queue is empty.
+ */
+Queue.prototype.peek = function(){
+	return this._elements[0];
+};
+
+/**
+ * \brief Retrieves and removes the head of this queue, or returns 
+ * undefined if this queue is empty.
+ */
+Queue.prototype.poll = function(){
+	return this._elements.shift();
+};
+
+/**
+ * \brief Inserts the specified element into this queue, if capacity is
+ *  reached the first element is removed.
+ */
+Queue.prototype.add = function(element){
+	if(this._capacity != undefined && this._elements.length == this._capacity){
+		this._elements.shift();
+	}
+	
+	this._elements.push(element);
+};
+
+/**
+ * \brief Returns the number of element in this queue.
+ */
+Queue.prototype.size = function(){
+	return this._elements.length;
+};
+
+/**
+ * \brief Returns an iterator over the elements in this queue.
+ */
+Queue.prototype.iterator = function(){
+	return Iterator(this._elements);
+};

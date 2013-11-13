@@ -19,8 +19,8 @@ Dependences :
 // TODO: faire fonctionner la fonction hashage à partir du rapport de l'année dernière
 // TODO: comment transmettre les données d'initialisation, le document
 // TODO: améliorer le constructeur avec les paramètres optionnels
-// TODO: détecter les erreurs de causalité
 // TODO: commenter
+// TODO: bug pour groupe > 1, handler pour ids transférés non mis en place => attendre que les connexions avec tous les ids reçu soit open avant d'être dans l'état ready
 
 
 /**
@@ -89,6 +89,54 @@ QVC.prototype.isCausallyReady = function(reference){
 };
 
 /**
+ * \brief ...
+ *
+ * \param qvc
+ *      ...
+ */
+QVC.prototype.isInferior = function(qvc){
+	var inferior = true;
+	var it = Iterator(this._entries, false);
+	var end = false;	
+		
+	while(inferior && !end){
+		try{
+			var entry = it.next();
+			inferior = (this._clocks[entry] < qvc._clocks[entry]);
+		}
+		catch(e){
+			end = true;
+		}
+	}
+	
+	return inferior;
+};
+
+/**
+ * \brief ...
+ *
+ * \param qvc
+ *      ...
+ */
+QVC.prototype.isInferiorOrEqual = function(qvc){
+	var inferior = true;
+	var it = Iterator(this._entries, false);
+	var end = false;	
+		
+	while(inferior && !end){
+		try{
+			var entry = it.next();
+			inferior = (this._clocks[entry] <= qvc._clocks[entry]);
+		}
+		catch(e){
+			end = true;
+		}
+	}
+	
+	return inferior;
+};
+
+/**
  * \brief Returns the litteral object reprensentation of a qvc.
  */
 QVC.prototype.toLitteralObject = function(){		
@@ -109,9 +157,11 @@ function PBCast(r, k, peerServer, joinId){
     this._qvc;
     this._entriesHash;
     this._notDelivered = [];
-    this._delivered = [];
+    this._delivered = new Queue();
     this.ready = false;
     this._cache = [];
+    this._groupPeerJoined = 0;
+    this._groupPeerToJoin;
 	
 	var options = {
 		key: '5g9qpwrh59v34n29',
@@ -127,10 +177,7 @@ function PBCast(r, k, peerServer, joinId){
 		// On rejoint le groupe dont le peer qui a l'id joinId fait partie.
 		if(joinId != undefined){
 			var connection = self._peer.connect(joinId);
-			connection.on('open', function(){
-				handleOpenedConnection(connection);
-				connection.send({type: PBCast.JOIN_REQ});
-			});
+			connection.on('open', handleOpenedConnection(connection));
 		}
 		
 		// On crée un nouveau groupe.
@@ -154,7 +201,7 @@ function PBCast(r, k, peerServer, joinId){
 					handleInitializationResponse(data.data);
 					break;
 				case PBCast.MSG:
-					handleMessage(data.data);
+					handleMessage(data.data, connection.peer);
 					break;
 				
 				case PBCast.QUIT:
@@ -175,9 +222,23 @@ function PBCast(r, k, peerServer, joinId){
 	}
 	
 	function handleOpenedConnection(connection){
-		connection.on('data', handleData(connection));
-		connection.on('close', handleQuit(connection));
-		self._connections.put(connection.peer, connection);
+		return function(){
+			connection.on('data', handleData(connection));
+			connection.on('close', handleQuit(connection));
+			self._connections.put(connection.peer, connection);			
+			
+			if(joinId != undefined && connection.peer == joinId){
+				connection.send({type: PBCast.JOIN_REQ});
+			}
+			
+			if(!self.ready && joinId != undefined && connection.peer != joinId){
+				self._groupPeerJoined++;
+				
+				if(self._groupPeerJoined == self._groupPeerToJoin){
+					initialize();
+				}
+			}
+		};
 	}
 	
 	function handleNewConnection(connection){
@@ -185,7 +246,7 @@ function PBCast(r, k, peerServer, joinId){
 		console.log('Nouvelle connexion: ' + peerId);
 		
 		if(!self._connections.hasKey(connection.peer)){
-			handleOpenedConnection(connection);
+			handleOpenedConnection(connection)();
 		}
 	}
 	
@@ -202,13 +263,14 @@ function PBCast(r, k, peerServer, joinId){
 		// renvoyer les données d'initialisation
 	}
 	
+	// attendre que les connexions avec tous les ids reçu soit open avant d'être dans l'état ready
 	function handleInitializationResponse(data){
 		// Get ids of the group.
+		self._groupPeerToJoin = data.ids.length;
+		
 		for(var i = 0; i < data.ids.length; i++){
 			var connection = self._peer.connect(data.ids[i]);
-			connection.on('open', function(){
-				handleOpenedConnection(connection);
-			});
+			connection.on('open', handleOpenedConnection(connection));
 		}
 					
 		// Get hash function of the group.
@@ -218,9 +280,10 @@ function PBCast(r, k, peerServer, joinId){
 		self._entriesHash = generator.generate(r || PBCast.DEFAULT_R, k || PBCast.DEFAULT_K);
 					
 		// Get other initialization data
-					
-					
-		initialize();
+		
+		if(self._groupPeerToJoin == 0){
+			initialize();
+		}
 	}
 	
 	function initialize(){
@@ -250,16 +313,18 @@ function PBCast(r, k, peerServer, joinId){
 		}
 	}
 	
-	function handleMessage(message){
+	function handleMessage(message, id){
 		var qvc = QVC.fromLitteralObject(message.qvc);
 	
 		if(qvc.isCausallyReady(self._qvc)){
 			self._qvc.incrementFrom(qvc);
-			self.emit('deliver', {error: false, msg: message.msg});
+			var error = detectError(qvc);
+			self.emit('deliver', {error: error, clocks: message.qvc.clocks, id: id, msg: message.msg});
+			self._delivered.add({qvc: message.qvc});
 			checkNoDelivered();
 		}
 		else{
-			self._notDelivered.push(message);
+			self._notDelivered.push({id: id, msg: message});
 		}
 	}
 
@@ -273,12 +338,33 @@ function PBCast(r, k, peerServer, joinId){
 			if(qvc.isCausallyReady(self._qvc)){
 				self._notDelivered.splice(i, 1);
 				self._qvc.incrementFrom(qvc);
-				self.emit('deliver', {error: false, msg: message.msg.msg});
+				var error = detectError(qvc);
+				self.emit('deliver', {error: error, clocks: message.msg.qvc.clocks, id: message.id, msg: message.msg.msg});
+				self._delivered.add({qvc: message.msg.qvc});
 			}
 			else{
 				i++;
 			}
 		}
+	}
+	
+	function detectError(qvc){
+		var inferiorToCurrent = qvc.isInferior(self._qvc);
+		var inferiorOrEqualToDelivered = true;
+		var it = self._delivered.iterator();
+		var end = false;	
+		
+		while(inferiorToCurrent && inferiorOrEqualToDelivered && !end){
+			try{
+				var deliveredQvc = QVC.fromLitteralObject(it.next()[1]);
+				inferiorOrEqualToDelivered = qvc.isInferiorOrEqual(deliveredQvc);
+			}
+			catch(e){
+				end = true;
+			}
+		}
+		
+		return inferiorToCurrent && inferiorOrEqualToDelivered;
 	}
 }
 
@@ -315,12 +401,10 @@ PBCast.prototype.getId = function(){
  */
 PBCast.prototype.send = function(message){
 	if(this.ready){
-		console.log('envoyé');
 		this._qvc.increment();
 		this._broadcast({type: PBCast.MSG, data: {qvc: this._qvc.toLitteralObject(), msg: message}});
 	}
 	else{
-		console.log('mis en cache');
 		this._cache.push(message);
 	}
 };
@@ -333,6 +417,7 @@ PBCast.prototype.send = function(message){
  */
 PBCast.prototype._broadcast = function(message){
 	for(var connEntry in this._connections.iterator()){
+		console.log(connEntry[0]);
 		connEntry[1].send(message);
 	}
 };
