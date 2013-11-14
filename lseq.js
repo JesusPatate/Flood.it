@@ -12,7 +12,6 @@
 
 /*!
  * \class Triplet
- * \brief Triplet meta data.
  * 
  * \param a First element of triplet tuple.
  * \param b Second element of triplet tuple.
@@ -34,9 +33,9 @@ function Triplet(a, b, c) {
  * \class Position
  * \extends Triplet
  * 
- * \param value Integer in range of <tt>[0..BASE[</tt>.
- * \param siteID Unique replica identifier.
- * \param clock \c s timestamps (default 0).
+ * \param value An integer.
+ * \param siteID A site identifier.
+ * \param clock A clock value.
  */
 function Position(value, siteID, clock) {
   if (!clock) {
@@ -50,25 +49,25 @@ Position.prototype = new Triplet;
 Position.prototype.constructor = Position;
 
 /*!
- * \brief Returns the value.
+ * \brief  Returns position's value (1rst element).
  * 
- * \return The integer in range of <tt>[0..BASE[</tt>.
+ * \return An integer in range of <tt>[0..LevelBase[</tt>.
  */
 Position.prototype.getValue = function() {
   return this.first;
 }
 
 /*!
- * \brief Returns the site ID.
+ * \brief Returns position's site ID (2nd element).
  * 
- * \return The unique identifier.
+ * \return A site identifier.
  */
 Position.prototype.getSiteID = function() {
   return this.second;
 }
 
 /*!
- * \brief Returns the clock.
+ * \brief Returns position's sclock (3rd element).
  * 
  * \return The clock value.
  */
@@ -76,6 +75,11 @@ Position.prototype.getClock = function() {
   return this.third;
 }
 
+/**
+ * brief Compares a position to another.
+ *
+ * \param pos Another position.
+ **/
 Position.prototype.compareTo = function(pos) {
     var res = -1;
 
@@ -96,7 +100,7 @@ Position.prototype.compareTo = function(pos) {
 
 /**
  * \class LSEQNode
- * \brief Node of an exponential tree
+ * \brief A Node of an exponential tree.
  */
 function LSEQNode(){
     this.positions = [];
@@ -287,26 +291,27 @@ LSEQTree.prototype.insert = function(value, siteID, clock, prevId, nextId){
  * \param id
  *      id of the element to delete.
  */
-LSEQTree.prototype.delete = function(id, siteID){
-    var parent = this._getNode(this._prefix(id, id.length - 2));
+LSEQTree.prototype.delete = function(id, siteID, clock){
+    var parent = this._getNode(this._prefix(id, id.length - 2),
+        function(node){node.size--;});
     var lastDepthId = id[id.length - 1];
     var node = parent.children[lastDepthId];
     var found = false;
     var i = 0;
     
     while(!found && i<node.positions.length){
-        if(node.positions[i].getSiteID() == siteID){
-            
-            found = true;
-            // node.positions[i] = null;
+        if(node.positions[i].getSiteID() == siteID
+            && node.positions[i].getClock() == clock){
+                
             node.positions.splice(i, 1);
+            found = true;
         }
         else {
             ++i;
         }
     }
     
-    // The node can be physically removed if it has no value or child.
+    // The node can be physically removed if it has neither position nor child.
     if(node.positions.length == 0 && node.children.length == 0){
         parent.children[lastDepthId] = null;
     }
@@ -365,7 +370,7 @@ LSEQTree.prototype._getNode = function(id, f){
 };
 
 /**
- * \brief Returns the number of element in the tree.
+ * \brief Returns the number of elements in the tree.
  */
 //LSEQTree.prototype.size = function(){
     //return this._root.size;
@@ -398,12 +403,12 @@ LSEQTree.prototype.toString = function(){
  * \param id  
  */
 LSEQTree.prototype.insertWithId = function(id, value, siteID, clock){
-	var node = this._getNode(id);
+	var node = this._getNode(id, function(node){node.size++;});
     var position = new Position(value, siteID, clock);
     var stop = false;
     var i = 0;
     
-    while(!stop && i<node.positions.length){
+    while(!stop && i< node.positions.length){
         if(node.positions[i].compareTo(position) > 0) {
             stop = true;
         }
@@ -420,10 +425,14 @@ LSEQTree.prototype.insertWithId = function(id, value, siteID, clock){
  * \brief 
  */
 function LSEQ(){
+    EventEmitter.call(this);
+    
     this._tree = new LSEQTree();
     this._offsetToId = [[0],[this._tree._base - 1]];
-    this._clock = 0;
 }
+
+LSEQ.prototype = Object.create(EventEmitter.prototype);
+LSEQ.prototype.constructor = LSEQ;
 
 /**
  * \brief Insert the given value at the given offset.
@@ -434,18 +443,18 @@ function LSEQ(){
  * \param offset
  *      offset.
  */
-LSEQ.prototype.insert = function(offset, value, siteID){
+LSEQ.prototype.insert = function(offset, value, siteID, clock){
     if(offset < 0 || offset > this.size()){
         throw new Error('Invalid offset');
     }
-
-    ++this._clock;
     
     var prevId = this._offsetToId[offset];
     var nextId = this._offsetToId[offset + 1];
-    var id = this._tree.insert(value, siteID, this.clock, prevId, nextId); // XXX clock en dur
+    var id = this._tree.insert(value, siteID, clock, prevId, nextId);
     
     this._offsetToId.splice(offset + 1, 0, id);
+
+    this.emit('insert', {value:value, id:id, siteID:siteID, clock:clock});
     
     return id;
 };
@@ -460,8 +469,6 @@ LSEQ.prototype.insert = function(offset, value, siteID){
  *      ID of the new node.
  */
 LSEQ.prototype.foreignInsert = function(id, value, siteID, clock) {
-    ++this._clock;
-
     this._tree.insertWithId(id, value, siteID, clock);
 
     // Get parent node
@@ -487,6 +494,8 @@ LSEQ.prototype.foreignInsert = function(id, value, siteID, clock) {
 	var newOffset = parentOffset + num + 1;
     
 	this._offsetToId[newOffset] = id;
+
+    this.emit('foreignInsert', {value:value, id:id, offset:newOffset, siteID:siteID});
 	
 	return newOffset;
 };
@@ -497,16 +506,16 @@ LSEQ.prototype.foreignInsert = function(id, value, siteID, clock) {
  * \param offset
  *      offset.
  */
-LSEQ.prototype.delete = function(offset, siteID){
+LSEQ.prototype.delete = function(offset, siteID, clock){
     if(offset < 0 || offset > this.size()){
         throw new Error('Invalid offset');
     }
-
-    ++this._clock;
     
     var id = this._offsetToId[offset];
-    this._tree.delete(id, siteID);
+    this._tree.delete(id, siteID, clock);
     this._offsetToId.splice(offset, 1);
+
+    this.emit('delete', {id:id, siteID:siteID, clock:clock});
     
     return id;
 };
@@ -518,7 +527,6 @@ LSEQ.prototype.delete = function(offset, siteID){
  *      ID of the node to delete.
  */
 LSEQ.prototype.foreignDelete = function(id, siteID, clock){
-    ++this._clock;
     
     // Get parent node
     
@@ -544,6 +552,8 @@ LSEQ.prototype.foreignDelete = function(id, siteID, clock){
 
 	this._offsetToId[offset] = null;
     this._tree.delete(id, siteID, clock);
+
+    this.emit('foreignDelete', {offset:offset});
 };
 
 LSEQ.prototype._getOffset = function(id) {
@@ -648,8 +658,20 @@ LSEQ.prototype._compareIDs = function(id1, id2) {
 /**
  * \brief 
  */
-LSEQ.prototype.messageDelivered = function(msg){
-    console.log(msg);
+LSEQ.prototype.onDelivery = function(message){
+    if(!message.error) {
+        if(message.local) { // Local site edition
+            // if message.msg.type == insert then insert()
+            // else if message.msg.type == delete then delete()
+        }
+        else { // Distant site edition
+            // if message.msg.type == insert then foreignInsert()
+            // else if message.msg.type == delete then foreignDelete()
+        }
+    }
+    else {
+        // Error of causality
+    }
 };
 
 var siteID = 'abc';
@@ -667,16 +689,13 @@ for (var i = 0 ; i < 10 ; ++i) {
 lseq.delete(2, siteID);
 console.log(lseq._tree.toString());
 
-var id = lseq.insert(6, '|a', siteID);
+var id = lseq.insert(6, '|a', siteID, 0);
 console.log(lseq._tree.toString());
 
 var siteID2 = 'ghjk';
-lseq.foreignInsert(id, '|b', siteID2, 3);
+lseq.foreignInsert(id, '|b', siteID2, 0);
 console.log(lseq._tree.toString());
 
-lseq.foreignDelete(id, siteID);
+lseq.foreignDelete(id, siteID, 0);
 console.log(lseq._tree.toString());
-
-//x[x.length-1] += 1;
-//lseq.foreignInsert("|a", x);
 
