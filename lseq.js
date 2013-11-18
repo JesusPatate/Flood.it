@@ -2,14 +2,6 @@
  * Dependances : seedrandom.js
  ***************************************/
 
-/****************************************
- * TODO :
- *  - node.size est maintenant inutile
- *  - node.children devrait être un objet
- *    natif plutôt qu'un tableau (l'espace
- *    d'un noeud supprimé reste alloué (null))
- ****************************************/
-
 /*!
  * \class Triplet
  * 
@@ -627,39 +619,25 @@ LSEQ.prototype.foreignDelete = function(id, siteID, clock){
 
 LSEQ.prototype._getOffset = function(id) {
 	var offset = 0;
-	var lowerIdx = 0;
-	var upperIdx = this._tree.size();
+	var currentNode = this._tree._root;
 	var found = false;
 	
-	if(id.length == 0 || ((id.length == 1) && (id[0] = 0))) {
-		found = true;
-		offset = 0;
-	}
-	
-	else {
-		while((found == false) && (lowerIdx <= upperIdx)) {
-			var midIdx = Math.floor((lowerIdx + upperIdx) / 2);
-			var midId = this._tree._getId(midIdx).id;
+	for(var depth = 0 ; depth < id.length ; ++depth) {
+		var i = 0;
+		
+		while(!stop && i < id[depth]) {
+			var child = currentNode.children[j];
 			
-			var comp = this._compareIDs(id, midId);
+			if(child != undefined && child != null) {
+				offset += child.positions.length;
+				offset += child.children.length;
+			}
 			
-			if(comp < 0) {
-				upperIdx = midIdx;
-			}
-			else if (comp > 0) {
-				lowerIdx = midIdx + 1;
-			}
-			else {
-				found = true;
-			}
+			++i;
 		}
 		
-		if (midId == id) {
-			offset = midIdx;
-		}
-		else {
-			offset = undefined;
-		}
+		offset += child.positions.length;
+		currentNode = child;
 	}
 	
 	return offset;
