@@ -473,7 +473,6 @@ LSEQTree.prototype.toString = function(){
  * \param id  
  */
 LSEQTree.prototype.insertWithId = function(id, value, siteID, clock){
-	var node = this._getNode(id, function(node){node.size++;});
     var position = new Position(value, siteID, clock);
     var stop = false;
     var i = 0;
@@ -499,6 +498,7 @@ LSEQTree.prototype.insertWithId = function(id, value, siteID, clock){
  */
 function LSEQ(){
     EventEmitter.call(this);
+    
     this._tree = new LSEQTree();
 }
 
@@ -755,3 +755,21 @@ console.log(lseq._tree.toString());
 
 console.log(lseq.delete(3));
 console.log(lseq._tree.toString());
+
+//lseq.delete(2);
+//console.log(lseq._tree.toString());
+//console.log(lseq._tree._root.size);
+
+//var id = lseq.insert(6, '|a', siteID, 0);
+//console.log(lseq._tree.toString());
+//console.log(lseq._tree._root.size);
+
+//var siteID2 = 'ghjk';
+//lseq.foreignInsert(id, '|b', siteID2, 0);
+//console.log(lseq._tree.toString());
+//console.log(lseq._tree._root.size);
+
+//lseq.foreignDelete(id, siteID, 0);
+//console.log(lseq._tree.toString());
+//console.log(lseq._tree._root.size);
+
