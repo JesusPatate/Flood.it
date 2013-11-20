@@ -6,7 +6,7 @@
  ***************************************/
 
 var utils = require('./utils');
-var md5 = require('./md5');
+var crypto = require('crypto');
 
 // TODO : tester
 // TODO : commenter
@@ -38,7 +38,7 @@ EntriesHash.fromLitteralObject = function(object){
  * 		...
  */
 EntriesHash.prototype.hash = function(id){
-	var hash = md5.md5(id);
+	var hash = crypto.createHash('md5').update(id + '').digest('hex');
 	var entries = {};
 	var i = 0;
 	var j = 0;
@@ -106,7 +106,6 @@ EntriesHashGenerator.prototype.generate = function(r, k){
 		var a = [];
 		
 		while(a.length < this._keySize){
-			//Math.seedrandom();
 			var n = Math.floor(Math.random() * m);
 			a.unshift(n);
 		}

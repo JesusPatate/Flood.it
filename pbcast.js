@@ -168,7 +168,7 @@ function PBCast2(serverLocation){
 		console.log("DISCONNECTED FROM " + serverLocation);
 	};
 	
-	this.websocket.onerror = function(event){
+	this._websocket.onerror = function(event){
 		console.log("ERROR FROM " + serverLocation + '['+ event.data +']');
 	};
 	
@@ -305,7 +305,7 @@ PBCast2.prototype.getId = function(){
 PBCast2.prototype.send = function(message){
 	if(this.ready){
 		var msg = JSON.stringify({type: 'MSG', data: {qvc: this._qvc.toLitteralObject(), id: this._id, msg: message}});
-		this.__websocket.send(msg);
+		this._websocket.send(msg);
 	}
 	else{
 		this._cache.push(message);

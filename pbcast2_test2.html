@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+  </head>
+  <body>
+	<script src="utils.js"></script>	
+	<script src="eventemitter.js"></script>
+    <script src="pbcast.js"></script>
+    <script>
+		var pbcast = new PBCast2('ws://localhost:1337');
+		
+		pbcast.on('ready', function(id){
+			console.log('Prêt: ' + id);
+		});
+      
+    </script>
+  </body>
+</html>
