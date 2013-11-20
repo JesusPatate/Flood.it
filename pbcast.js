@@ -20,7 +20,6 @@ Dependences :
 // TODO: comment transmettre les données d'initialisation, le document
 // TODO: améliorer le constructeur avec les paramètres optionnels
 // TODO: commenter
-// TODO: bug pour groupe > 1, handler pour ids transférés non mis en place => attendre que les connexions avec tous les ids reçu soit open avant d'être dans l'état ready
 
 
 /**
@@ -160,6 +159,7 @@ function PBCast(r, k, peerServer, joinId){
     this._delivered = new Queue();
     this.ready = false;
     this._cache = [];
+    this._localCache = [];
     this._groupPeerJoined = 0;
     this._groupPeerToJoin;
 	
@@ -227,7 +227,7 @@ function PBCast(r, k, peerServer, joinId){
 			connection.on('close', handleQuit(connection));
 			self._connections.put(connection.peer, connection);			
 			
-			if(joinId != undefined && connection.peer == joinId){
+			if(!self.ready && joinId != undefined && connection.peer == joinId){
 				connection.send({type: PBCast.JOIN_REQ});
 			}
 			
@@ -291,6 +291,7 @@ function PBCast(r, k, peerServer, joinId){
 		var entries = self._entriesHash.hash(self._peer.id);
 		self._qvc = new QVC(clocks, entries);
 		self.ready = true;
+		emptyLocalCache();
 		emptyCache();
 		self.id = self._peer.id;
 		self.emit('ready', self.id);
@@ -313,13 +314,20 @@ function PBCast(r, k, peerServer, joinId){
 		}
 	}
 	
+	function emptyLocalCache(){
+		while(self._cache.length > 0){
+			var message = self._cache.shift();
+			self.localSend(message);
+		}
+	}
+	
 	function handleMessage(message, id){
 		var qvc = QVC.fromLitteralObject(message.qvc);
 	
 		if(qvc.isCausallyReady(self._qvc)){
 			self._qvc.incrementFrom(qvc);
 			var error = detectError(qvc);
-			self.emit('deliver', {error: error, clocks: message.qvc.clocks, id: id, msg: message.msg});
+			self.emit('deliver', {error: error, local: false, msg: message.msg});
 			self._delivered.add({qvc: message.qvc});
 			checkNoDelivered();
 		}
@@ -339,7 +347,7 @@ function PBCast(r, k, peerServer, joinId){
 				self._notDelivered.splice(i, 1);
 				self._qvc.incrementFrom(qvc);
 				var error = detectError(qvc);
-				self.emit('deliver', {error: error, clocks: message.msg.qvc.clocks, id: message.id, msg: message.msg.msg});
+				self.emit('deliver', {error: error, local: false, msg: message.msg.msg});
 				self._delivered.add({qvc: message.msg.qvc});
 			}
 			else{
@@ -401,7 +409,6 @@ PBCast.prototype.getId = function(){
  */
 PBCast.prototype.send = function(message){
 	if(this.ready){
-		this._qvc.increment();
 		this._broadcast({type: PBCast.MSG, data: {qvc: this._qvc.toLitteralObject(), msg: message}});
 	}
 	else{
@@ -419,5 +426,21 @@ PBCast.prototype._broadcast = function(message){
 	for(var connEntry in this._connections.iterator()){
 		console.log(connEntry[0]);
 		connEntry[1].send(message);
+	}
+};
+
+/**
+ * \brief ...
+ *
+ * \param message
+ *      ...
+ */
+PBCast.prototype.localSend = function(message){
+	if(this.ready){
+		this._qvc.increment();
+		self.emit('deliver', {error: error, clocks: this._qvc._clocks, id: this._peer.id, local: false, msg: message});
+	}
+	else{
+		this._localCache.push(message);
 	}
 };

@@ -135,8 +135,44 @@ Queue.prototype.size = function(){
 };
 
 /**
- * \brief Returns an iterator over the elements in this queue.
+ * \brief Returns an iterator over the elements (index, value) in this queue.
  */
 Queue.prototype.iterator = function(){
 	return Iterator(this._elements);
+};
+
+
+/**
+ * \class PrimeCalculator
+ * \brief ...
+ */
+function PrimeCalculator(){
+}
+
+/**
+ * \brief ...
+ *
+ * \param bound
+ *      ...
+ */
+PrimeCalculator.getNextPrime = function(bound){
+	var sieve = [];
+	var i = 2;
+	var j;
+	var primes = [1];
+
+	while(primes[primes.length - 1] < bound){
+		if(!sieve[i]){
+			// i has not been marked, so it is prime.
+			primes.push(i);
+			
+			for(j = i << 1; j <= bound; j += i){
+				sieve[j] = true;
+			}
+		}
+				
+		i++;
+	}
+	
+	return primes[primes.length - 1];
 };

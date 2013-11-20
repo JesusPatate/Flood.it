@@ -2,6 +2,7 @@
  Dependences : 
  * seedrandom.js,
  * md5.js
+ * utils.js
  ***************************************/
 
 // TODO : tester
@@ -96,18 +97,19 @@ EntriesHashGenerator.prototype.generate = function(r, k){
 	var K = 2 * k
 	var aa = [];
 	var i;
+	var m = PrimeCalculator.getNextPrime(r);
 	
 	for(i = 0; i < K; i++){
 		var a = [];
 		
 		while(a.length < this._keySize){
 			Math.seedrandom();
-			var n = Math.floor(Math.random() * (r - 1));
+			var n = Math.floor(Math.random() * m);
 			a.unshift(n);
 		}
 		
 		aa.push(a);
 	}
 	
-	return new EntriesHash(aa, k, 41);
+	return new EntriesHash(aa, k, m);
 };
