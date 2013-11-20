@@ -114,7 +114,7 @@ function onHttpRequest(req, res){
 			res.end(fs.readFileSync('./logootEditor.js','utf8'));  
 			break;
     
-		case '/logoot.html':
+		case '/index.html':
 		case '/':
 		default:
 			res.writeHeader(200, {'Content-Type': 'text/html'});  

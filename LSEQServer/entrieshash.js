@@ -5,6 +5,9 @@
  * utils.js
  ***************************************/
 
+var utils = require('./utils');
+var md5 = require('./md5');
+
 // TODO : tester
 // TODO : commenter
 
@@ -35,7 +38,7 @@ EntriesHash.fromLitteralObject = function(object){
  * 		...
  */
 EntriesHash.prototype.hash = function(id){
-	var hash = md5(id);
+	var hash = md5.md5(id);
 	var entries = {};
 	var i = 0;
 	var j = 0;
@@ -97,13 +100,13 @@ EntriesHashGenerator.prototype.generate = function(r, k){
 	var K = 2 * k
 	var aa = [];
 	var i;
-	var m = PrimeCalculator.getNextPrime(r);
+	var m = utils.PrimeCalculator.getNextPrime(r);
 	
 	for(i = 0; i < K; i++){
 		var a = [];
 		
 		while(a.length < this._keySize){
-			Math.seedrandom();
+			//Math.seedrandom();
 			var n = Math.floor(Math.random() * m);
 			a.unshift(n);
 		}
