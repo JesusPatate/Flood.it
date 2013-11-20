@@ -14,7 +14,10 @@
    id="svg2"
    version="1.1"
    inkscape:version="0.48.4 r9939"
-   sodipodi:docname="archi.svg">
+   sodipodi:docname="archi.svg"
+   inkscape:export-filename="/home/stan/dev/Flood.it/archi.png"
+   inkscape:export-xdpi="90"
+   inkscape:export-ydpi="90">
   <defs
      id="defs4">
     <marker
@@ -263,8 +266,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.1498529"
-     inkscape:cx="830.85252"
-     inkscape:cy="314.98487"
+     inkscape:cx="989.58443"
+     inkscape:cy="251.56961"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -402,7 +405,7 @@
          sodipodi:role="line"
          id="tspan4445"
          x="410.78934"
-         y="947.82001">emit('deliver', {error: ..., msg: ...})</tspan></text>
+         y="947.82001">emit('deliver', {error: ..., clocks: ..., id: ..., msg: ...})</tspan></text>
     <text
        xml:space="preserve"
        style="font-size:15px;font-style:normal;font-weight:normal;line-height:125%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
