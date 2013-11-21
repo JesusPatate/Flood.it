@@ -1,28 +1,122 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="UTF-8">
-    <style>
-		body {
-        background-color: #81DEFF;
-      }
-      #editor {
-        background-color: white;
-        padding: 10px;
-        margin-bottom: 20px;
-        width:300px;
-        height:250px;
-        overflow: auto;
-      }
-    </style>
-  </head>
+<head>
+  
+  <meta charset="UTF-8">
+
+  <title>editor test</title>
+  
+  <!-- Using bootstrap -->
+  <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css">
+  <!-- Optional bootstrap theme -->
+  <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap-theme.min.css">
+  
+  <style>
+    #header {
+      margin: 0; 
+      padding: 0; 
+      width: 100%;
+      border-bottom: 1px solid black; 
+    }
+    #maintitle {
+      margin-left: 1%; 
+    }
+    .editortestbox {
+      background-color: #345;
+      color: white;
+      margin-top: 1em;
+      margin-bottom: 1em;
+      margin-left: 1.4%;
+      margin-right: 1.4%;
+      padding-left: 1%; 
+      padding-right: 1%; 
+      padding-bottom: 1em; 
+      min-height: 250px;
+      width: 46.8%; 
+      display: block;
+      float: left;
+      min-width: 256px; 
+    }
+    #editor {
+      /* background-color: #def; */
+      color: white; 
+      font-size: 1.4em; 
+      min-height: 200px; 
+      word-wrap: break-word;
+      padding: 4px; 
+      border: 0px solid black; 
+    }
+    #logger, #handshake {
+      background-color: #eee; 
+      color: #444; 
+      min-height: 200px; 
+      word-wrap: break-word;
+      padding: 4px;
+    }
+
+    .clearb {
+      clear: both;
+    }
+    .hr {
+      border-bottom: 1px solid black; 
+    }
+  </style>
+
+</head>
   <body>
-	  <div id="editor" contenteditable="true"></div>
-	  
-	<script src="eventemitter.js"></script>
-	<script src="editor.js"></script>
-    <script>
-      var editor = new Editor('editor');
-    </script>
+    
+    <div id="page">
+      <div id="header">
+        <h1 id="maintitle">Flood.it</h1>
+      </div>
+      <div class="editortestbox">
+        <h2>Flood.me</h2>
+        <div id="editor" contenteditable="false"></div>
+      </div>
+      <div class="editortestbox">
+        <h2>Log.me</h2>
+        <div id="logger"></div>
+      </div>
+      <div class="clearb hr"></div>
+      <div class="editortestbox" id="pluginid">
+        <h2>Connect.to</h1>
+        <div id="handshake">
+          <div id="local">
+            Local peer ID&nbsp;: 
+            <span id="localpeerid">
+            <img src="http://smarttech.com/CSS/Nivo/themes/default/loading.gif" alt="Loading local peer ID" title="Loading local peer ID" width="16px" height="16px" />
+            </span>
+          </div>
+          <div id="remote">
+            Connect to peer ID&nbsp;: <input id="remotepeerid" type="text" value="" /> <button id="addremoteid">Add</button>
+          </div>
+          <div id="remotecontainer">
+            Known peers&nbsp;: 
+            <ul id="remotelist">
+            <li id="listisempty">None</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- remote JS -->
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="http://netdna.bootstrapcdn.com/bootstrap/3.0.2/js/bootstrap.min.js"></script><!-- bootstrap requires jQuery -->
+    <script src="http://cdn.peerjs.com/0.3/peer.js"></script>
+    
+
+    <!-- local JS -->
+    <script src="eventemitter.js"></script>
+    <script src="editor_logger.js"></script>
+    <script src="editor.js"></script>
+    
+    <!-- init peer JS with editor-->
+    <script src="new_peer.js"></script>
+
+    
+
   </body>
 </html>
+
+

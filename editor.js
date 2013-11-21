@@ -1,73 +1,186 @@
 /******************************************
-Dependences : 
-* eventemitter.js,
+* Dependences : 
+* 	eventemitter.js, jQuery 
+* 	(optional) editor_logger.js -> using logs for display, interruption recovery, ... 
 *******************************************/
+
+
 
 /**
  * \class Editor
  * \brief ...
  */
-function Editor(contentEditableId){
+function Editor( contentEditableId, username, logger ){
 	var self = this;
-	EventEmitter.call(this);
-	this._document = document.getElementById(contentEditableId);
-	this._document.contentEditable = true;
+	var logs = logger || false; // optional ; no type check, logger is an object... 
+	
+	var author = username ? username.toString() : Math.random().toString(); 
+	
+	
+
+	EventEmitter.call( this );
+
+	this._document = document.getElementById( contentEditableId );
+	this._jDocument = jQuery( '#' + contentEditableId );
+		this._document.contentEditable = true;
+
 	this._startDoc = document.createElement('span');
-	this._startDoc.id = 'start';
+		this._startDoc.id = 'start';
+
 	this._endDoc = document.createElement('span');
-	this._endDoc.id = 'end';
-	this._document.appendChild(this._startDoc);
-	this._document.appendChild(this._endDoc);
+		this._endDoc.id = 'end';
+
+	this._document.appendChild( this._startDoc );
+	this._document.appendChild( this._endDoc );
 	
-	this._document.addEventListener('keypress', keypressHandler, false);
-	this._document.addEventListener('keydown', keydownHandler, false);
-	this._document.addEventListener('paste', pasteHandler, false);
-	this._document.addEventListener('cut', cutHandler, false);
+
+
+	var internal = []; 
+	// init internal representation with existing content 
+	var existingContent = this._document.textContent.toString(); 
+	for ( character in existingContent ) {
+		var charstruct = {};
+
+		charstruct.character = existingContent[character]; 
+		charstruct.offset = internal.length; 
+		charstruct.author = 'System'; 
+
+		if ( logs ) { 
+			logs.charstructState( charstruct ); 
+		}
+
+		internal.push( charstruct ); 
+	};
 	
-	function keypressHandler(event){
+
+
+	// var focusCampo = function( id ) {
+	// 	var inputField = document.getElementById( id );
+	// 	if ( inputField != null && inputField.innerHTML.length != 0 ){
+	// 		if ( inputField.createTextRange ) {
+	// 			var FieldRange = inputField.createTextRange();
+	// 			FieldRange.moveStart( 'character', inputField.innerHTML.length );
+	// 			FieldRange.collapse();
+	// 			FieldRange.select();
+	// 		} else if ( inputField.selectionStart || inputField.selectionStart == '0' ) {
+	// 			var elemLen = inputField.innerHTML.length;
+	// 			inputField.selectionStart = elemLen;
+	// 			inputField.selectionEnd = elemLen;
+	// 			inputField.focus();
+	// 		}
+	// 	} else {
+	// 		inputField.focus();
+	// 	}
+	// };
+
+	function moveCaretToEnd(el) {
+    if ( typeof el.selectionStart == 'number' ) {
+        el.selectionStart = el.selectionEnd = el.innerHTML.length;
+    } else if ( typeof el.createTextRange != 'undefined' ) {
+        el.focus();
+        var range = el.createTextRange();
+        range.collapse( false );
+        range.select();
+    }
+	}
+
+	var fieldcarret = moveCaretToEnd( contentEditableId );
+
+	// event handling part  
+
+	function keypressHandler( event ){
 		event.preventDefault();
-		var offset = self._getCaretCharacterOffset();
-		var character = self._fromASCIITCodeToString(event.charCode);
-		var nextNode = self._getNextSelectionNode();	
-		var newChar = document.createElement('span');
-		newChar.innerHTML = self._fromStringToHTML(character);
-		self._document.insertBefore(newChar, nextNode);
-		// remettre le curseur au bon endroit
-		self.emit('insertion', {value: character, offset: offset});
+
+		// if ( logs ) { 
+		// 	logs.comment( 'Key pressed: ' + event.charCode + ' (' + self._fromASCIITCodeToString( event.charCode ) + ')' ); 
+		// }
+
+		var charstruct = {}; 
+		
+		charstruct.character = self._fromASCIITCodeToString( event.charCode ); 
+		charstruct.eventtype = 'insert'; 
+		charstruct.offset = internal.length; 
+		charstruct.author = author; 
+		
+		internal.push( charstruct ); 
+
+		// self.emit( 'edit', charstruct ); 
+
+		if ( logs ) { 
+			logs.emit( charstruct ); 
+		}
+
+		self._jDocument.append( ( self._fromStringToHTML( charstruct.character ) == '<br />' )? '<br />' : '<span id="' + 
+			charstruct.offset + '" class="' + charstruct.author + '">' + 
+			self._fromStringToHTML( charstruct.character ) + '</span>' 
+		); 
+
+		// carret update 
+		self.fieldcarret = moveCaretToEnd( contentEditableId ); 
+
+		// var offset = self._getCaretCharacterOffset();
+		// var character = self._fromASCIITCodeToString( event.charCode );
+		// var nextNode = self._getNextSelectionNode();	
+
+		// var newChar = document.createElement( 'span' );
+
+		// newChar.innerHTML = self._fromStringToHTML( character );
+
+		// self._document.insertBefore( newChar, nextNode );
+		// // remettre le curseur au bon endroit
+		// self.emit( 'insertion', { value: character, offset: offset } );
 	}
 	
 	function keydownHandler(event){
 		// <- or del
 		if(event.charCode == 8 || event.charCode == 46){
 			event.preventDefault();
-			var offset = self._getCaretCharacterOffset();
-			
-			// del
-			if(event.keyCode == 46){
-				offset++;
+
+			if ( logs ) { 
+				logs.emit( charstruct, 'delete' ); 
 			}
+
+
+
+			// var offset = self._getCaretCharacterOffset();
 			
-			var removedNode = self._getSelectionNode();
-			self._document.removeChild(removedNode);
-			// remettre le curseur au bon endroit	
-			self.emit('deletion', offset);
+			// // del
+			// if(event.keyCode == 46){
+			// 	offset++;
+			// }
+			
+			// var removedNode = self._getSelectionNode();
+			// self._document.removeChild(removedNode);
+			// // remettre le curseur au bon endroit	
+			// self.emit('deletion', offset);
 		}	
 	}
 	
-	function pasteHandler(event){
+	function pasteHandler( event ){
 		event.preventDefault();
-		alert("Paste not supported.");
-		console.error("Paste not supported.");
+		if ( logs ) { 
+			logs.comment( 'Paste not implemented !' ); 
+		}
 	}
 	
-	function cutHandler(event){
+	function cutHandler( event ){
 		event.preventDefault();
-		alert("Paste not supported.");
-		console.error("Paste not supported.");
+		if ( logs ) { 
+			logs.comment( 'Cut not implemented !' ); 
+		}
 	}
+
+
+
+	// event listeners part 
+
+	this._document.addEventListener( 'keypress', keypressHandler, false );
+	this._document.addEventListener( 'keydown', keydownHandler, false );
+	this._document.addEventListener( 'paste', pasteHandler, false );
+	this._document.addEventListener( 'cut', cutHandler, false );
 }
 
-Editor.prototype = Object.create(EventEmitter.prototype);
+Editor.prototype = Object.create( EventEmitter.prototype );
 Editor.prototype.constructor = Editor;
 
 /**
@@ -152,7 +265,7 @@ Editor.prototype._fromStringToHTML = function(character){
 	else if(character == ' '){
 		html = '&nbsp;';
 	}
-	
+
 	return html;
 };
 
@@ -162,12 +275,14 @@ Editor.prototype._fromStringToHTML = function(character){
  * \param charCode
  * 		...
  */
-Editor.prototype._fromASCIITCodeToString = function(charCode){
-	var character = String.fromCharCode(charCode);
+Editor.prototype._fromASCIITCodeToString = function( charCode ){
+	var character = '';
 	
 	// new line
-	if(charCode == 13){
+	if( charCode == 13 ){
 		character = '\n';
+	} else {
+		character = String.fromCharCode( charCode ); 
 	}
 	
 	return character;
@@ -210,3 +325,6 @@ Editor.prototype._getSelectionNode = function(){
 	
 	return selectedNode;
 };
+
+// end of Editor 
+// end of $ = jQuery 
