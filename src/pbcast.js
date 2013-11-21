@@ -141,6 +141,8 @@ QVC.prototype.toLitteralObject = function(){
 	return {clocks: this._clocks, entries: this._entries};
 };
 
+
+
 /**
  * \class PBCast
  * \brief ...
