@@ -511,12 +511,14 @@ LSEQ.prototype.insert = function(offset, value, siteID, clock){
         throw new Error('Invalid offset');
     }
     
+    //console.log('LOG id: ' + 'OK');
+    
     var prevId = this._tree._getId(offset).id;
     var nextId = this._tree._getId(offset + 1).id;
     
     var id = this._tree.insert(value, siteID, clock, prevId, nextId);
 
-    this.emit('insert', {value:value, id:id, siteID:siteID, clock:clock});
+    this.emit('edit', {type: 'insert', value:value, id:id, siteID:siteID, clock:clock});
     
     return id;
 };
@@ -577,7 +579,7 @@ LSEQ.prototype.delete = function(offset){
     
     this._tree.delete(id, siteID, clock);
 
-    this.emit('delete', {id:id, siteID:siteID, clock:clock});
+    this.emit('edit', {type: 'delete', id:id, siteID:siteID, clock:clock});
     
     return id;
 };
@@ -705,49 +707,26 @@ LSEQ.prototype._compareIDs = function(id1, id2) {
 /**
  * \brief 
  */
-LSEQ.prototype.onDelivery = function(message){
+LSEQ.prototype.onDelivery = function(message){	
     if(!message.error) {
         if(message.local) { // Local site edition
-            // if message.msg.type == insert then insert()
-            // else if message.msg.type == delete then delete()
+			if(message.msg.type == 'insert'){
+				this.insert(message.msg.offset, message.msg.value, message.id, message.clocks);
+			}
+			else if(message.msg.type == 'delete'){
+				this.delete(message.msg.offset);
+			}
         }
         else { // Distant site edition
-            // if message.msg.type == insert then foreignInsert()
-            // else if message.msg.type == delete then foreignDelete()
+			if(message.msg.type == 'insert'){
+				this.foreignInsert(message.msg.id, message.msg.value, message.msg.siteID, message.msg.clock);
+			}
+			else if(message.msg.type == 'delete'){
+				this.foreignDelete(message.msg.id, message.msg.siteID, message.msg.clock);
+			}
         }
     }
     else {
         // Error of causality
     }
 };
-
-var siteID = 'abc';
-var lseq = new LSEQ();
-var x;
-
-for (var i = 0 ; i < 10 ; ++i) {
-	var id = lseq.insert(i, '|' + i, siteID, (parseInt(i)+1));
-}
-
-console.log(lseq._tree.toString());
-
-console.log(lseq.delete(3));
-console.log(lseq._tree.toString());
-
-//lseq.delete(2);
-//console.log(lseq._tree.toString());
-//console.log(lseq._tree._root.size);
-
-//var id = lseq.insert(6, '|a', siteID, 0);
-//console.log(lseq._tree.toString());
-//console.log(lseq._tree._root.size);
-
-//var siteID2 = 'ghjk';
-//lseq.foreignInsert(id, '|b', siteID2, 0);
-//console.log(lseq._tree.toString());
-//console.log(lseq._tree._root.size);
-
-//lseq.foreignDelete(id, siteID, 0);
-//console.log(lseq._tree.toString());
-//console.log(lseq._tree._root.size);
-

@@ -1,6 +1,6 @@
 var PORT = 1337;
-var R = 7;
-var K = 100;
+var R = 100;
+var K = 5;
 var WebSocketServer = require('websocket').server;
 var http = require('http');
 var url = require('url');
@@ -96,29 +96,59 @@ function onHttpRequest(req, res){
 	switch(route){
 		case '/bootstrap.min.css':
 			res.writeHeader(200, {'Content-Type': 'text/css'});  
-			res.end(fs.readFileSync('./bootstrap.min.css','utf8'));  
+			res.end(fs.readFileSync('public/css/bootstrap.min.css', 'utf8'));  
 			break;
 		
 		case '/bootstrap.min.js':
 			res.writeHeader(200, {'Content-Type': 'application/javascript'});  
-			res.end(fs.readFileSync('./bootstrap.min.js','utf8'));  
+			res.end(fs.readFileSync('public/js/bootstrap.min.js', 'utf8'));  
 			break;
     
-		case '/logoot.js':
+		case '/lseq.js':
 			res.writeHeader(200, {'Content-Type': 'application/javascript'});  
-			res.end(fs.readFileSync('./logoot.js','utf8'));  
+			res.end(fs.readFileSync('public/js/lseq.js', 'utf8'));  
+			break;
+			
+		case '/pbcast2.js':
+			res.writeHeader(200, {'Content-Type': 'application/javascript'});  
+			res.end(fs.readFileSync('public/js/pbcast2.js', 'utf8'));  
+			break;
+		
+		case '/pbcast.js':
+			res.writeHeader(200, {'Content-Type': 'application/javascript'});  
+			res.end(fs.readFileSync('public/js/pbcast.js', 'utf8'));  
 			break;
     
-		case '/logootEditor.js':
+		case '/editor.js':
 			res.writeHeader(200, {'Content-Type': 'application/javascript'});  
-			res.end(fs.readFileSync('./logootEditor.js','utf8'));  
+			res.end(fs.readFileSync('public/js/editor.js', 'utf8'));  
+			break;
+		
+		case '/ace.js':
+			res.writeHeader(200, {'Content-Type': 'application/javascript'});  
+			res.end(fs.readFileSync('public/js/ace.js', 'utf8'));  
+			break;
+			
+		case '/utils.js':
+			res.writeHeader(200, {'Content-Type': 'application/javascript'});  
+			res.end(fs.readFileSync('public/js/utils.js', 'utf8'));  
+			break;
+		
+		case '/eventemitter.js':
+			res.writeHeader(200, {'Content-Type': 'application/javascript'});  
+			res.end(fs.readFileSync('public/js/eventemitter.js', 'utf8'));  
+			break;
+			
+		case '/seedrandom.js':
+			res.writeHeader(200, {'Content-Type': 'application/javascript'});  
+			res.end(fs.readFileSync('public/js/seedrandom.js', 'utf8'));  
 			break;
     
 		case '/index.html':
 		case '/':
 		default:
 			res.writeHeader(200, {'Content-Type': 'text/html'});  
-			res.end(fs.readFileSync('./logoot.html','utf8'));  
+			res.end(fs.readFileSync('./index.html', 'utf8'));  
 			break;
 	}
 }

@@ -1,15 +1,43 @@
-/****************************************
- Dependences : 
- * seedrandom.js,
- * md5.js
- * utils.js
- ***************************************/
+var crypto = require('crypto');
 
-var utils = require('./utils');
-var md5 = require('./md5');
-
-// TODO : tester
 // TODO : commenter
+
+
+/**
+ * \class PrimeCalculator
+ * \brief ...
+ */
+function PrimeCalculator(){
+}
+
+/**
+ * \brief ...
+ *
+ * \param bound
+ *      ...
+ */
+PrimeCalculator.getNextPrime = function(bound){
+	var sieve = [];
+	var i = 2;
+	var j;
+	var primes = [1];
+
+	while(primes[primes.length - 1] < bound){
+		if(!sieve[i]){
+			// i has not been marked, so it is prime.
+			primes.push(i);
+			
+			for(j = i << 1; j <= bound; j += i){
+				sieve[j] = true;
+			}
+		}
+				
+		i++;
+	}
+	
+	return primes[primes.length - 1];
+};
+
 
 /**
  * \class EntriesHash
@@ -38,7 +66,7 @@ EntriesHash.fromLitteralObject = function(object){
  * 		...
  */
 EntriesHash.prototype.hash = function(id){
-	var hash = md5.md5(id);
+	var hash = crypto.createHash('md5').update(String(id)).digest('hex');
 	var entries = {};
 	var i = 0;
 	var j = 0;
@@ -100,13 +128,12 @@ EntriesHashGenerator.prototype.generate = function(r, k){
 	var K = 2 * k
 	var aa = [];
 	var i;
-	var m = utils.PrimeCalculator.getNextPrime(r);
+	var m = PrimeCalculator.getNextPrime(r);
 	
 	for(i = 0; i < K; i++){
 		var a = [];
 		
 		while(a.length < this._keySize){
-			//Math.seedrandom();
 			var n = Math.floor(Math.random() * m);
 			a.unshift(n);
 		}

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Logoot Full JS Implementation</title>
+		<link rel="stylesheet" type="text/css" href="bootstrap.min.css">
+		<style type="text/css" media="screen">
+			#editor { 
+				position: absolute;
+				top: 0;
+				right: 0;
+				bottom: 0;
+				left: 0;
+			}
+		</style>
+	</head>
+	
+	<body>
+		<div id="editor"></div>
+
+		<!-- Register Modal -->
+		<div class="modal fade" id="registerModal">
+			<div class="modal-header">
+				<h3>Register</h3>
+			</div>
+			<div class="modal-body">
+				<label>
+				To start, register with enter logoot location, port and your name:
+				</label>
+			<div class="form-inline">
+				<div class="input-prepend input-append">
+					<span class="add-on">ws://</span><input type="text" class="span2"
+						id="registerAddress"><span  class="add-on">:</span><input
+						type="text" class="span1" id="registerPort">
+				</div>
+				
+				<input type="text" id="registerName" class="span2" placeholder="Name">
+			</div>
+		</div>
+			<div class="modal-footer">
+				<button class="btn btn-primary" id="registerSubmit"
+				data-loading-text="Register ...">Register</button>
+			</div>
+		</div>
+
+		<script type="application/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+		<script type="application/javascript" src="bootstrap.min.js"></script>
+		<script src="eventemitter.js" type="text/javascript" charset="utf-8"></script>
+		<script src="seedrandom.js" type="text/javascript" charset="utf-8"></script>
+		<script src="lseq.js" type="text/javascript" charset="utf-8"></script>
+		<script src="ace.js" type="text/javascript" charset="utf-8"></script>
+		<script src="utils.js" type="text/javascript" charset="utf-8"></script>
+		<script src="pbcast.js" type="text/javascript" charset="utf-8"></script>
+		<script src="pbcast2.js" type="text/javascript" charset="utf-8"></script>
+		<script src="editor.js" type="text/javascript" charset="utf-8"></script>
+		<script type="application/javascript">
+			function  adaptePaperToScreen(){
+				var MIN_HEIGHT = 200;
+				var paper = document.getElementById('editor');
+				var newHeight = window.innerHeight - paper.offsetTop - 60;
+				paper.style.height = Math.max(MIN_HEIGHT, newHeight) + 'px';
+			}
+    
+			window.addEventListener("load", adaptePaperToScreen, false);
+			window.addEventListener("resize", adaptePaperToScreen, false);
+	
+			var editor;
+			var lseq;
+			var pbcast;
+
+
+			function register(){
+				$('#registerSubmit').button('loading');
+
+				// Get Value and connect to LogootEditor.
+				var serverAddress = ($('#registerAddress').val().length > 0) ?
+					$('#registerAddress').val() : '127.0.0.1';
+				var serverPort = ($('#registerPort').val().length > 0) ?
+					$('#registerPort').val() : '1337';
+				var userName = ($('#registerName').val().length > 0) ? 
+					$('#registerName').val() : 'NoName';
+
+				var serverLocation = 'ws://' + serverAddress + ':' + serverPort;
+				pbcast = new PBCast(serverLocation);
+				pbcast.on('ready', function(id){
+					$('#registerModal').modal('hide');
+					editor = new Editor("editor");
+					lseq = new LSEQ();
+					console.log('id: ' + id);
+				
+					pbcast.on('deliver', function(msg){
+						lseq.onDelivery(msg);
+					});
+				
+					lseq.on('edit', function(msg){
+						pbcast.send(msg);
+					});
+				
+					editor.on('edit', function(msg){
+						pbcast.localSend(msg);
+					});
+				
+					lseq.on('foreignDelete', function(msg){
+						editor.delete(msg.offset);
+					});
+				
+					lseq.on('foreignInsert', function(msg){
+						editor.insert(msg.value, msg.offset);
+					});
+				});
+			}
+
+			$(document).ready(function(){
+				$('#registerAddress').attr('placeholder', document.domain);
+				$('#registerPort').attr('placeholder', window.location.port);
+				$('#registerModal').modal({
+					backdrop: 'static',
+					keyboard: false,
+					show: true 
+				});
+				$('#registerSubmit').click(register);
+				$('#registerName').keyup(function(e){
+					if(e.keyCode == 13){
+						register(); 
+					}
+				});
+			});
+		</script>
+	</body>
+</html>
+
