@@ -90,6 +90,27 @@ Position.prototype.compareTo = function(pos) {
     return res;
 }
 
+function compareArrays(array1, array2) {
+    res = true;
+    
+    if(array1.length != array2.length) {
+        res = false;
+    }
+    else {
+        var index = 0;
+
+        while(res == false && index < array1.length) {
+            if(array1[index] != array2[index]) {
+                res = false;
+            }
+
+            ++i;
+        }
+    }
+
+    return res;
+}
+
 /**
  * \class LSEQNode
  * \brief A Node of an exponential tree.
@@ -105,6 +126,8 @@ LSEQNode.prototype.ChildNumber = function(fragment, siteID, clock) {
 	var found = false;
 	var i = 0;
 
+    console.log("DBG ChildNumber(" + fragment + " | " + siteID + " | " + clock + ")");
+    
     // Find child
 	while (!found && i < this.children.length) {
 		if (i == fragment) {
@@ -128,7 +151,7 @@ LSEQNode.prototype.ChildNumber = function(fragment, siteID, clock) {
 
         while (!found && i < positions.length) {
             if(positions[i].getSiteID() == siteID
-                && positions[i].getClock() == clock) {
+                && compareArrays(positions[i].getClock(), clock)) {
 
                 found = true;
             }
@@ -286,6 +309,7 @@ LSEQTree.prototype.insert = function(value, siteID, clock, prevId, nextId){
 LSEQTree.prototype.delete = function(id, siteID, clock){
     var parent = this._getNode(this._prefix(id, id.length - 2),
         function(node){node.size--;});
+    
     var lastDepthId = id[id.length - 1];
     var node = parent.children[lastDepthId];
     var found = false;
@@ -293,7 +317,7 @@ LSEQTree.prototype.delete = function(id, siteID, clock){
     
     while(!found && i<node.positions.length){
         if(node.positions[i].getSiteID() == siteID
-            && node.positions[i].getClock() == clock){
+            && compareArrays(node.positions[i].getClock(), clock)){
                 
             node.positions.splice(i, 1);
             node.size++;
@@ -465,7 +489,7 @@ LSEQTree.prototype.toString = function(){
  * \param id  
  */
 LSEQTree.prototype.insertWithId = function(id, value, siteID, clock){
-    var position = new Position(value, siteID, clock);
+    var position = new Position(value, siteID, clock.slice());
     var stop = false;
     var i = 0;
 	
@@ -510,13 +534,18 @@ LSEQ.prototype.insert = function(offset, value, siteID, clock){
     if(offset < 0 || offset > this.size()){
         throw new Error('Invalid offset');
     }
-    
-    //console.log('LOG id: ' + 'OK');
+
+    console.log("DBG insert(" + offset + " | " + value + " | " + siteID + " | " + clock + ")");
     
     var prevId = this._tree._getId(offset).id;
     var nextId = this._tree._getId(offset + 1).id;
+
+    console.log("DBG insert(" + value + " | " + siteID + " | " + clock + " | " + prevId + " | " + nextId + ")");
     
     var id = this._tree.insert(value, siteID, clock, prevId, nextId);
+    var nextId = this._tree._getId(offset + 1).id;
+
+    console.log("DBG tree: " + this._tree);
 
     this.emit('edit', {type: 'insert', value:value, id:id, siteID:siteID, clock:clock});
     
@@ -533,6 +562,9 @@ LSEQ.prototype.insert = function(offset, value, siteID, clock){
  *      ID of the new node.
  */
 LSEQ.prototype.foreignInsert = function(id, value, siteID, clock) {
+
+    console.log("DBG foreignInsert(" + id + " | "+ value + " | " + siteID + " | " + clock + ")");
+    
     this._tree.insertWithId(id, value, siteID, clock);
 
     // Get parent node
@@ -558,6 +590,8 @@ LSEQ.prototype.foreignInsert = function(id, value, siteID, clock) {
 	var newOffset = parentOffset + num + 1;
 
     this.emit('foreignInsert', {value:value, id:id, offset:newOffset, siteID:siteID});
+
+    console.log("DBG tree: " + this._tree);
 	
 	return newOffset;
 };
@@ -572,12 +606,19 @@ LSEQ.prototype.delete = function(offset){
     if(offset < 0 || offset > this.size()){
         throw new Error('Invalid offset');
     }
-    
-    var id = this._tree._getId(offset).id;
+
+    console.log("DBG delete(" + offset + ")");
+
+    var x = this._tree._getId(offset);
+    var id = x.id;
     var siteID = this._tree._getId(offset).siteID;
     var clock = this._tree._getId(offset).clock;
+
+    console.log("DBG delete(" + id + " | " + siteID + " | " + clock + ")");
     
     this._tree.delete(id, siteID, clock);
+
+    console.log("DBG tree: " + this._tree);
 
     this.emit('edit', {type: 'delete', id:id, siteID:siteID, clock:clock});
     
@@ -591,11 +632,15 @@ LSEQ.prototype.delete = function(offset){
  *      ID of the node to delete.
  */
 LSEQ.prototype.foreignDelete = function(id, siteID, clock){
+
+    console.log("DBG foreignDelete(" + id + " | " + siteID + " | " + clock + ")");
     
     // Get parent node
     
 	var parentId = id.slice(0, id.length - 1);
     var parent = this._tree._getNode(parentId);
+
+    console.log("DBG parentId=" + parentId);
 
     // Get not empty parent node
     // [0.0.0] => []
@@ -608,13 +653,25 @@ LSEQ.prototype.foreignDelete = function(id, siteID, clock){
         i = parentId.length - 1;
     }
 
+    console.log("DBG parentId=" + parentId);
+
     // Compute the offset of the node to delete
     
 	var parentOffset = this._getOffset(parentId);
+
+    console.log("DBG parentOffset=" + parentOffset);
+
+    console.log("DBG parent children : " + parent.children.toString());
+    
 	var num = parent.ChildNumber(id[id.length - 1], siteID, clock);
-	var offset = parentOffset + num + 1;
+
+    console.log("DBG num=" + num);
+    
+	var offset = parentOffset + num;
 	
     this._tree.delete(id, siteID, clock);
+
+    console.log("DBG tree: " + this._tree);
 
     this.emit('foreignDelete', {offset:offset});
 };
@@ -627,8 +684,8 @@ LSEQ.prototype._getOffset = function(id) {
 	for(var depth = 0 ; depth < id.length ; ++depth) {
 		var i = 0;
 		
-		while(!stop && i < id[depth]) {
-			var child = currentNode.children[j];
+		while(i < id[depth]) {
+			var child = currentNode.children[i];
 			
 			if(child != undefined && child != null) {
 				offset += child.positions.length;
@@ -707,11 +764,13 @@ LSEQ.prototype._compareIDs = function(id1, id2) {
 /**
  * \brief 
  */
-LSEQ.prototype.onDelivery = function(message){	
+LSEQ.prototype.onDelivery = function(message){
+    console.log("DBG Message delivered: (" + message.error + " | " + message.local + " | " + message.msg.type + ")");
+    
     if(!message.error) {
         if(message.local) { // Local site edition
 			if(message.msg.type == 'insert'){
-				this.insert(message.msg.offset, message.msg.value, message.id, message.clocks);
+				this.insert(message.msg.offset, message.msg.value, message.id, message.clocks.slice());
 			}
 			else if(message.msg.type == 'delete'){
 				this.delete(message.msg.offset);
@@ -719,10 +778,12 @@ LSEQ.prototype.onDelivery = function(message){
         }
         else { // Distant site edition
 			if(message.msg.type == 'insert'){
-				this.foreignInsert(message.msg.id, message.msg.value, message.msg.siteID, message.msg.clock);
+                console.log("DBG foreignInsert");
+				this.foreignInsert(message.msg.id, message.msg.value, message.msg.siteID, message.msg.clock.slice());
 			}
 			else if(message.msg.type == 'delete'){
-				this.foreignDelete(message.msg.id, message.msg.siteID, message.msg.clock);
+                console.log("DBG foreignDelete");
+				this.foreignDelete(message.msg.id, message.msg.siteID, message.msg.clock.slice());
 			}
         }
     }

@@ -32,7 +32,7 @@ function Editor(contentEditableId){
 					break;
                                         
 				case 'removeText' :
-					self.emit("edit", {type: 'delete', offset: offset});
+					self.emit("edit", {type: 'delete', offset: offset + 1}); // We send the offset of the cursor before the removal
 					break;
                                         
 				default :
@@ -68,7 +68,7 @@ Editor.prototype.insert = function(value, offset){
  */
 Editor.prototype.delete = function(offset){
 	var self = this;
-	var delta = this._asDelta('removeText', offset);
+	var delta = this._asDelta('removeText', offset - 1); // We receive the offset of the cursor before the removal
 	this._offAir(function(){
 		self._editor.getSession().getDocument().applyDeltas([delta]);
 	});
