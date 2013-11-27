@@ -694,7 +694,8 @@ LSEQ.prototype._getOffset = function(id) {
 			
 			++i;
 		}
-		
+
+        child = currentNode.children[i];
 		offset += child.positions.length;
 		currentNode = child;
 	}
