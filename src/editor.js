@@ -68,7 +68,7 @@ Editor.prototype.insert = function(value, offset){
  */
 Editor.prototype.delete = function(offset){
 	var self = this;
-	var delta = this._asDelta('removeText', offset - 1); // We receive the offset of the cursor before the removal
+	var delta = this._asDelta('removeText', offset);
 	this._offAir(function(){
 		self._editor.getSession().getDocument().applyDeltas([delta]);
 	});
