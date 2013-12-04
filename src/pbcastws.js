@@ -1,10 +1,3 @@
-/******************************************
-Dependences : 
-* eventemitter.js,
-* utils.js,
-* pbcast.js
-*******************************************/
-
 define(['EventEmitter', 'utils', 'pbcast'], function(EventEmitter, utilsRef, pbcastRef){
     var pbcastws = function(){
 		var self = this;
