@@ -17,7 +17,6 @@ Dependences :
 
 
 // TODO: comment transmettre les données d'initialisation, le document
-// TODO: améliorer le constructeur avec les paramètres optionnels
 // TODO: commenter
 // TODO: que transmettre dans le message on deliver (local ou non) ?
 
@@ -197,13 +196,12 @@ function PBCast(){
 	this._peer.on('open', handleOpen);
 	this._peer.on('connection', handleNewConnection);
 
-	function handleOpen(id){    
+	function handleOpen(id){
 		// We join the group of the joinId peer.
 		if(joinId != undefined){
 			var connection = self._peer.connect(joinId);
 			connection.on('open', handleOpenedConnection(connection));
 		}
-
 		// We create a new group.
 		else{
 			var generator = new EntriesHashGenerator();
@@ -213,7 +211,6 @@ function PBCast(){
 	}
 
 	function handleData(connection){
-
 		return function(data){
 			console.log(JSON.stringify(data));
 			 
@@ -268,9 +265,6 @@ function PBCast(){
 	}
 	
 	function handleNewConnection(connection){
-		var peerId = connection.peer;
-		console.log('Nouvelle connexion: ' + peerId);
-		
 		if(!self._connections.hasKey(connection.peer)){
 			handleOpenedConnection(connection)();
 		}
@@ -286,7 +280,6 @@ function PBCast(){
 		}
 					
 		requestConnection.send({type: PBCast.JOIN_RESP, data: {ids: knownIds, entriesHash: self._entriesHash.toLitteralObject()}});
-		// renvoyer les données d'initialisation
 	}
 	
 	// attendre que les connexions avec tous les ids reçu soit open avant d'être dans l'état ready
@@ -399,8 +392,6 @@ function PBCast(){
 PBCast.prototype = Object.create(EventEmitter.prototype);
 PBCast.prototype.constructor = PBCast;
 
-PBCast.DEFAULT_HOST = '0.peerjs.com';
-PBCast.DEFAULT_PORT = 9000;
 PBCast.JOIN_REQ = 0;
 PBCast.JOIN_RESP = 1;
 PBCast.MSG = 2;
@@ -442,7 +433,6 @@ PBCast.prototype.send = function(message){
  */
 PBCast.prototype._broadcast = function(message){
 	for(var connEntry in this._connections.iterator()){
-		console.log(connEntry[0]);
 		connEntry[1].send(message);
 	}
 };
