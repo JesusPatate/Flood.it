@@ -31,11 +31,11 @@
 			<div class="form-inline">
 				<div class="input-prepend input-append">
 					<span class="add-on">ws://</span><input type="text" class="span2"
-						id="registerAddress"><span  class="add-on">:</span><input
-						type="text" class="span1" id="registerPort">
+						id="serverHost"><span  class="add-on">:</span><input
+						type="text" class="span1" id="serverPort">
 				</div>
 				
-				<input type="text" id="registerName" class="span2" placeholder="Join ID">
+				<input type="text" id="joinId" class="span2" placeholder="Join ID">
 			</div>
 		</div>
 			<div class="modal-footer">
@@ -74,17 +74,15 @@
 
 			function register(){
 				$('#registerSubmit').button('loading');
-
-				// Get Value and connect to LogootEditor.
-				var serverAddress = ($('#registerAddress').val().length > 0) ?
-					$('#registerAddress').val() : '127.0.0.1';
-				var serverPort = ($('#registerPort').val().length > 0) ?
-					$('#registerPort').val() : '1337';
-				var joinId = ($('#registerName').val().length > 0) ? 
-					$('#registerName').val() : 'NoName';
+				var serverHost = ($('#serverHost').val().length > 0) ?
+					$('#serverHost').val() : '127.0.0.1';
+				var serverPort = ($('#serverPort').val().length > 0) ?
+					$('#serverPort').val() : '1337';
+				var joinId = ($('#joinId').val().length > 0) ? 
+					$('#joinId').val() : 'NoName';
 
 				
-				pbcast = new PBCast({port:"8090", host:"localhost"}, joinId);
+				pbcast = new PBCast({port: 8090, host: '172.16.134.147'}, joinId);
 				pbcast.on('ready', function(id){
 					$('#registerModal').modal('hide');
 					editor = new Editor("editor");
