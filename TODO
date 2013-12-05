@@ -2,5 +2,7 @@
 + choix d'un framework de tests unitaires 
 + implémenter l'ajout et la suppression multiple
 + implémenter l'arrivée et le départ de peer
++ faire l'IHM proprement
 + commenter
 + faire tester à plus large échelle
++ refaire le routage dans le projet nodejs
