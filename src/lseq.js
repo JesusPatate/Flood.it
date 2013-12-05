@@ -771,7 +771,7 @@ LSEQ.prototype.onDelivery = function(message){
     if(!message.error) {
         if(message.local) { // Local site edition
 			if(message.msg.type == 'insert'){
-				this.insert(message.msg.offset, message.msg.value, message.id, message.clocks.slice());
+				this.insert(message.msg.offset, message.msg.value, message.id, message.clocks);
 			}
 			else if(message.msg.type == 'delete'){
 				this.delete(message.msg.offset);
@@ -780,11 +780,11 @@ LSEQ.prototype.onDelivery = function(message){
         else { // Distant site edition
 			if(message.msg.type == 'insert'){
                 console.log("DBG foreignInsert");
-				this.foreignInsert(message.msg.id, message.msg.value, message.msg.siteID, message.msg.clock.slice());
+				this.foreignInsert(message.msg.id, message.msg.value, message.msg.siteID, message.msg.clock);
 			}
 			else if(message.msg.type == 'delete'){
                 console.log("DBG foreignDelete");
-				this.foreignDelete(message.msg.id, message.msg.siteID, message.msg.clock.slice());
+				this.foreignDelete(message.msg.id, message.msg.siteID, message.msg.clock);
 			}
         }
     }

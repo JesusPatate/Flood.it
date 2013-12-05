@@ -189,7 +189,6 @@ function PBCast(){
 	}
 
 	var options = {
-		key: '5g9qpwrh59v34n29',
 		host: peerServer.host,
 		port: peerServer.port
 	};
@@ -207,7 +206,7 @@ function PBCast(){
 
 		// We create a new group.
 		else{
-			var generator = new entriesHash.EntriesHashGenerator();
+			var generator = new EntriesHashGenerator();
 			self._entriesHash = generator.generate(r, k);
 			initialize();
 		}
@@ -251,16 +250,16 @@ function PBCast(){
 		return function(){
 			connection.on('data', handleData(connection));
 			connection.on('close', handleQuit(connection));
-			selfPBcast._connections.put(connection.peer, connection);      
+			self._connections.put(connection.peer, connection);      
 
 			if(!self.ready){
 				if(connection.peer == joinId){
 					connection.send({type: PBCast.JOIN_REQ});
 				}
 				else{
-					selfPBcast._groupPeerJoined++;
+					self._groupPeerJoined++;
 
-					if(selfPBcast._groupPeerJoined == selfPBcast._groupPeerToJoin){
+					if(self._groupPeerJoined == self._groupPeerToJoin){
 						initialize();
 					}
 				}
@@ -301,7 +300,7 @@ function PBCast(){
 		}
 					
 		// Get hash function of the group.
-		self._entriesHash = EntriesHash.fromLitteralObject(data.entrieshash);
+		self._entriesHash = EntriesHash.fromLitteralObject(data.entriesHash);
 		
 		if(self._groupPeerToJoin == 0){
 			initialize();
