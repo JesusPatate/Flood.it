@@ -6,19 +6,7 @@ Dependences :
 * entrieshash.js
 *******************************************/
 
-/*Interface fournie :
-  - send(message);
-  - getId();
-  - id;
-  - ready;
-  - on('ready', function(id){});
-  - on('deliver', function(message){});
-***********************************************/
-
-
-// TODO: comment transmettre les données d'initialisation, le document
 // TODO: commenter
-// TODO: que transmettre dans le message on deliver (local ou non) ?
 
 
 /**
@@ -45,6 +33,19 @@ QVC.fromLitteralObject = function(object){
 */
 QVC.prototype.clocks = function(){
 	return this._clocks.slice();
+};
+
+/**
+* \brief Return a copy of the entries.
+*/
+QVC.prototype.entries = function(){
+	var entriesCopy = {};
+	
+	for(var entry in this._entries){
+		entriesCopy[entry] = entry;
+	}
+	
+	return entriesCopy;
 };
 
 /**
@@ -282,7 +283,6 @@ function PBCast(){
 		requestConnection.send({type: PBCast.JOIN_RESP, data: {ids: knownIds, entriesHash: self._entriesHash.toLitteralObject()}});
 	}
 	
-	// attendre que les connexions avec tous les ids reçu soit open avant d'être dans l'état ready
 	function handleInitializationResponse(data){
 		// Get ids of the group.
 		self._groupPeerToJoin = data.ids.length;
@@ -334,6 +334,7 @@ function PBCast(){
 		}
 	}
 	
+	// TODO : id utile ??
 	function handleMessage(message, id){
 		var qvc = QVC.fromLitteralObject(message.qvc);
 	
@@ -446,7 +447,7 @@ PBCast.prototype._broadcast = function(message){
 PBCast.prototype.localSend = function(message){
 	if(this.ready){
 		this._qvc.increment();
-		this.emit('deliver', {error: false, clocks: this._qvc.clocks(), id: this._peer.id, local: true, msg: message});
+		this.emit('deliver', {error: false, entries: this._qvc.entries(), id: this._peer.id, local: true, msg: message});
 	}
 	else{
 		this._localCache.push(message);
