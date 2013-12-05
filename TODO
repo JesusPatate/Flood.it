@@ -1,2 +1,6 @@
 + utilisation de Require.js pour les dépendances
 + choix d'un framework de tests unitaires 
++ implémenter l'ajout et la suppression multiple
++ implémenter l'arrivée et le départ de peer
++ commenter
++ faire tester à plus large échelle
