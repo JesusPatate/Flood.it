@@ -109,9 +109,9 @@ function onHttpRequest(req, res){
 			res.end(fs.readFileSync('public/js/lseq.js', 'utf8'));  
 			break;
 			
-		case '/pbcast2.js':
+		case '/pbcastws.js':
 			res.writeHeader(200, {'Content-Type': 'application/javascript'});  
-			res.end(fs.readFileSync('public/js/pbcast2.js', 'utf8'));  
+			res.end(fs.readFileSync('public/js/pbcastws.js', 'utf8'));  
 			break;
 		
 		case '/pbcast.js':

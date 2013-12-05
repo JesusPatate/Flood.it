@@ -6,20 +6,7 @@ Dependences :
 * entrieshash.js
 *******************************************/
 
-/*Interface fournie :
-  - send(message);
-  - getId();
-  - id;
-  - ready;
-  - on('ready', function(id){});
-  - on('deliver', function(message){});
-***********************************************/
-
-
-// TODO: comment transmettre les données d'initialisation, le document
-// TODO: améliorer le constructeur avec les paramètres optionnels
 // TODO: commenter
-// TODO: que transmettre dans le message on deliver (local ou non) ?
 
 
 /**
@@ -46,6 +33,19 @@ QVC.fromLitteralObject = function(object){
 */
 QVC.prototype.clocks = function(){
 	return this._clocks.slice();
+};
+
+/**
+* \brief Return a copy of the entries.
+*/
+QVC.prototype.entries = function(){
+	var entriesCopy = {};
+	
+	for(var entry in this._entries){
+		entriesCopy[entry] = entry;
+	}
+	
+	return entriesCopy;
 };
 
 /**
@@ -197,13 +197,12 @@ function PBCast(){
 	this._peer.on('open', handleOpen);
 	this._peer.on('connection', handleNewConnection);
 
-	function handleOpen(id){    
+	function handleOpen(id){
 		// We join the group of the joinId peer.
 		if(joinId != undefined){
 			var connection = self._peer.connect(joinId);
 			connection.on('open', handleOpenedConnection(connection));
 		}
-
 		// We create a new group.
 		else{
 			var generator = new EntriesHashGenerator();
@@ -213,7 +212,6 @@ function PBCast(){
 	}
 
 	function handleData(connection){
-
 		return function(data){
 			console.log(JSON.stringify(data));
 			 
@@ -268,9 +266,6 @@ function PBCast(){
 	}
 	
 	function handleNewConnection(connection){
-		var peerId = connection.peer;
-		console.log('Nouvelle connexion: ' + peerId);
-		
 		if(!self._connections.hasKey(connection.peer)){
 			handleOpenedConnection(connection)();
 		}
@@ -286,10 +281,8 @@ function PBCast(){
 		}
 					
 		requestConnection.send({type: PBCast.JOIN_RESP, data: {ids: knownIds, entriesHash: self._entriesHash.toLitteralObject()}});
-		// renvoyer les données d'initialisation
 	}
 	
-	// attendre que les connexions avec tous les ids reçu soit open avant d'être dans l'état ready
 	function handleInitializationResponse(data){
 		// Get ids of the group.
 		self._groupPeerToJoin = data.ids.length;
@@ -341,6 +334,7 @@ function PBCast(){
 		}
 	}
 	
+	// TODO : id utile ??
 	function handleMessage(message, id){
 		var qvc = QVC.fromLitteralObject(message.qvc);
 	
@@ -399,8 +393,6 @@ function PBCast(){
 PBCast.prototype = Object.create(EventEmitter.prototype);
 PBCast.prototype.constructor = PBCast;
 
-PBCast.DEFAULT_HOST = '0.peerjs.com';
-PBCast.DEFAULT_PORT = 9000;
 PBCast.JOIN_REQ = 0;
 PBCast.JOIN_RESP = 1;
 PBCast.MSG = 2;
@@ -442,7 +434,6 @@ PBCast.prototype.send = function(message){
  */
 PBCast.prototype._broadcast = function(message){
 	for(var connEntry in this._connections.iterator()){
-		console.log(connEntry[0]);
 		connEntry[1].send(message);
 	}
 };
@@ -456,7 +447,7 @@ PBCast.prototype._broadcast = function(message){
 PBCast.prototype.localSend = function(message){
 	if(this.ready){
 		this._qvc.increment();
-		this.emit('deliver', {error: false, clocks: this._qvc.clocks(), id: this._peer.id, local: true, msg: message});
+		this.emit('deliver', {error: false, entries: this._qvc.entries(), id: this._peer.id, local: true, msg: message});
 	}
 	else{
 		this._localCache.push(message);
