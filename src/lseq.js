@@ -130,14 +130,17 @@ LSEQNode.prototype.ChildNumber = function(fragment, siteID, clock) {
     
     // Find child
 	while (!found && i < this.children.length) {
-		if (i == fragment) {
-			found = true;
-		}
-		else {
-			if (this.children[i] != undefined && this.children[i] != null) {
-				++num;
+		if (this.children[i] != undefined && this.children[i] != null
+				&& this.children[i].isEmpty() == false) {
+			
+			if (i == fragment) {
+				found = true;
 			}
 			
+			++num;
+		}
+		
+		if(!found) {
 			++i;
 		}
 	}
@@ -150,12 +153,12 @@ LSEQNode.prototype.ChildNumber = function(fragment, siteID, clock) {
         i = 0;
 
         while (!found && i < positions.length) {
-            if(positions[i].getSiteID() == siteID
-                && compareArrays(positions[i].getClock(), clock)) {
+			if(positions[i].getSiteID() == siteID
+				&& compareArrays(positions[i].getClock(), clock)) {
 
-                found = true;
-            }
-            else if (positions[i] != undefined) {
+				found = true;
+			}
+			else if (positions[i] != undefined) {
                 ++num;
             }
 
@@ -164,6 +167,13 @@ LSEQNode.prototype.ChildNumber = function(fragment, siteID, clock) {
     }
 	
 	return found ? num : undefined;
+}
+
+/**
+ * Returns wether the node has neither children nor position
+ */
+LSEQNode.prototype.isEmpty = function() {
+	return ((this.children.length == 0) && (this.positions.length == 0));
 }
 
 /**
@@ -587,7 +597,9 @@ LSEQ.prototype.foreignInsert = function(id, value, siteID, clock) {
     
 	var parentOffset = this._getOffset(parentId);
 	var num = parent.ChildNumber(id[id.length - 1], siteID, clock);
-	var newOffset = parentOffset + num + 1;
+	var newOffset = parentOffset + num;
+
+	console.log("DBG newOffset: " + newOffset);
 
     this.emit('foreignInsert', {value:value, id:id, offset:newOffset, siteID:siteID});
 
