@@ -27,14 +27,10 @@ function Triplet(a, b, c) {
  * 
  * \param value An integer.
  * \param siteID A site identifier.
- * \param clock A clock value.
+ * \param clockEntries Entries in clock
  */
-function Position(value, siteID, clock) {
-  if (!clock) {
-    var clock = 0;
-  }
-
-  Triplet.call(this, value, siteID, clock);
+function Position(value, siteID, clockEntries) {
+  Triplet.call(this, value, siteID, clockEntries);
 }
 
 Position.prototype = new Triplet;
@@ -59,11 +55,11 @@ Position.prototype.getSiteID = function() {
 }
 
 /*!
- * \brief Returns position's sclock (3rd element).
+ * \brief Returns position's clock entries (3rd element).
  * 
- * \return The clock value.
+ * \return The clock entries.
  */
-Position.prototype.getClock = function() {
+Position.prototype.getClockEntries = function() {
   return this.third;
 }
 
@@ -79,34 +75,20 @@ Position.prototype.compareTo = function(pos) {
         res = 1;
     }
     else if (this.siteID == pos.getSiteID()) {
-        if (this.clock > pos.getClock()) {
-            res = 1;
-        }
-        else if (this.clock == pos.getClock()) {
-            res = 0;
-        }
-    }
+		res = 1;
+	}
 
     return res;
 }
 
-function compareArrays(array1, array2) {
+function compareClockEntries(entries1, entries2) {
     res = true;
     
-    if(array1.length != array2.length) {
-        res = false;
-    }
-    else {
-        var index = 0;
-
-        while(res == false && index < array1.length) {
-            if(array1[index] != array2[index]) {
-                res = false;
-            }
-
-            ++i;
-        }
-    }
+    for(var i in entries1) {
+		if(!(i in entries2)) {
+			res = false;
+		}
+	}
 
     return res;
 }
@@ -125,8 +107,6 @@ LSEQNode.prototype.ChildNumber = function(fragment, siteID, clock) {
 	var num = 0;
 	var found = false;
 	var i = 0;
-
-    console.log("DBG ChildNumber(" + fragment + " | " + siteID + " | " + clock + ")");
     
     // Find child
 	while (!found && i < this.children.length) {
@@ -154,7 +134,7 @@ LSEQNode.prototype.ChildNumber = function(fragment, siteID, clock) {
 
         while (!found && i < positions.length) {
 			if(positions[i].getSiteID() == siteID
-				&& compareArrays(positions[i].getClock(), clock)) {
+				&& compareClockEntries(positions[i].getClockEntries(), clock)) {
 
 				found = true;
 			}
@@ -327,7 +307,7 @@ LSEQTree.prototype.delete = function(id, siteID, clock){
     
     while(!found && i<node.positions.length){
         if(node.positions[i].getSiteID() == siteID
-            && compareArrays(node.positions[i].getClock(), clock)){
+            && compareClockEntries(node.positions[i].getClockEntries(), clock)){
                 
             node.positions.splice(i, 1);
             node.size++;
@@ -381,7 +361,7 @@ LSEQTree.prototype._getId = function(offset){
 						var pos = currentNode.children[i].positions[offset - n - 1];
 						id[depth] = i;
 						siteID = pos.getSiteID();
-						clock = pos.getClock();
+						clock = pos.getClockEntries();
 						stop = true;
 					}
 				}
@@ -499,7 +479,7 @@ LSEQTree.prototype.toString = function(){
  * \param id  
  */
 LSEQTree.prototype.insertWithId = function(id, value, siteID, clock){
-    var position = new Position(value, siteID, clock.slice());
+    var position = new Position(value, siteID, clock);
     var stop = false;
     var i = 0;
 	
@@ -544,20 +524,16 @@ LSEQ.prototype.insert = function(offset, value, siteID, clock){
     if(offset < 0 || offset > this.size()){
         throw new Error('Invalid offset');
     }
-
-    console.log("DBG insert(" + offset + " | " + value + " | " + siteID + " | " + clock + ")");
+    
+    console.log("DBG clock:" + clock.toString());
     
     var prevId = this._tree._getId(offset).id;
     var nextId = this._tree._getId(offset + 1).id;
-
-    console.log("DBG insert(" + value + " | " + siteID + " | " + clock + " | " + prevId + " | " + nextId + ")");
     
     var id = this._tree.insert(value, siteID, clock, prevId, nextId);
     var nextId = this._tree._getId(offset + 1).id;
 
-    console.log("DBG tree: " + this._tree);
-
-    this.emit('edit', {type: 'insert', value:value, id:id, siteID:siteID, clock:clock});
+    this.emit('edit', {type: 'insert', value:value, id:id, siteID:siteID, clockEntries:clock});
     
     return id;
 };
@@ -572,8 +548,6 @@ LSEQ.prototype.insert = function(offset, value, siteID, clock){
  *      ID of the new node.
  */
 LSEQ.prototype.foreignInsert = function(id, value, siteID, clock) {
-
-    console.log("DBG foreignInsert(" + id + " | "+ value + " | " + siteID + " | " + clock + ")");
     
     this._tree.insertWithId(id, value, siteID, clock);
 
@@ -599,11 +573,7 @@ LSEQ.prototype.foreignInsert = function(id, value, siteID, clock) {
 	var num = parent.ChildNumber(id[id.length - 1], siteID, clock);
 	var newOffset = parentOffset + num;
 
-	console.log("DBG newOffset: " + newOffset);
-
     this.emit('foreignInsert', {value:value, id:id, offset:newOffset, siteID:siteID});
-
-    console.log("DBG tree: " + this._tree);
 	
 	return newOffset;
 };
@@ -619,20 +589,14 @@ LSEQ.prototype.delete = function(offset){
         throw new Error('Invalid offset');
     }
 
-    console.log("DBG delete(" + offset + ")");
-
     var x = this._tree._getId(offset);
     var id = x.id;
     var siteID = this._tree._getId(offset).siteID;
     var clock = this._tree._getId(offset).clock;
-
-    console.log("DBG delete(" + id + " | " + siteID + " | " + clock + ")");
     
     this._tree.delete(id, siteID, clock);
 
-    console.log("DBG tree: " + this._tree);
-
-    this.emit('edit', {type: 'delete', id:id, siteID:siteID, clock:clock});
+    this.emit('edit', {type: 'delete', id:id, siteID:siteID, clockEntries:clock});
     
     return id;
 };
@@ -644,15 +608,10 @@ LSEQ.prototype.delete = function(offset){
  *      ID of the node to delete.
  */
 LSEQ.prototype.foreignDelete = function(id, siteID, clock){
-
-    console.log("DBG foreignDelete(" + id + " | " + siteID + " | " + clock + ")");
     
     // Get parent node
-    
 	var parentId = id.slice(0, id.length - 1);
     var parent = this._tree._getNode(parentId);
-
-    console.log("DBG parentId=" + parentId);
 
     // Get not empty parent node
     // [0.0.0] => []
@@ -665,25 +624,15 @@ LSEQ.prototype.foreignDelete = function(id, siteID, clock){
         i = parentId.length - 1;
     }
 
-    console.log("DBG parentId=" + parentId);
-
     // Compute the offset of the node to delete
     
 	var parentOffset = this._getOffset(parentId);
-
-    console.log("DBG parentOffset=" + parentOffset);
-
-    console.log("DBG parent children : " + parent.children.toString());
     
 	var num = parent.ChildNumber(id[id.length - 1], siteID, clock);
-
-    console.log("DBG num=" + num);
     
 	var offset = parentOffset + num;
 	
     this._tree.delete(id, siteID, clock);
-
-    console.log("DBG tree: " + this._tree);
 
     this.emit('foreignDelete', {offset:offset});
 };
@@ -778,12 +727,10 @@ LSEQ.prototype._compareIDs = function(id1, id2) {
  * \brief 
  */
 LSEQ.prototype.onDelivery = function(message){
-    console.log("DBG Message delivered: (" + message.error + " | " + message.local + " | " + message.msg.type + ")");
-    
     if(!message.error) {
         if(message.local) { // Local site edition
 			if(message.msg.type == 'insert'){
-				this.insert(message.msg.offset, message.msg.value, message.id, message.clocks);
+				this.insert(message.msg.offset, message.msg.value, message.id, message.entries);
 			}
 			else if(message.msg.type == 'delete'){
 				this.delete(message.msg.offset);
@@ -791,12 +738,10 @@ LSEQ.prototype.onDelivery = function(message){
         }
         else { // Distant site edition
 			if(message.msg.type == 'insert'){
-                console.log("DBG foreignInsert");
-				this.foreignInsert(message.msg.id, message.msg.value, message.msg.siteID, message.msg.clock);
+				this.foreignInsert(message.msg.id, message.msg.value, message.msg.siteID, message.msg.clockEntries);
 			}
 			else if(message.msg.type == 'delete'){
-                console.log("DBG foreignDelete");
-				this.foreignDelete(message.msg.id, message.msg.siteID, message.msg.clock);
+				this.foreignDelete(message.msg.id, message.msg.siteID, message.msg.clockEntries);
 			}
         }
     }
