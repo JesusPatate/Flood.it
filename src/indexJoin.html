@@ -83,11 +83,11 @@
 
 				
 				pbcast = new PBCast({port: 8090, host: '172.16.134.147'}, joinId);
-				pbcast.on('ready', function(id){
+				pbcast.on('ready', function(data){
 					$('#registerModal').modal('hide');
 					editor = new Editor("editor");
 					lseq = new LSEQ();
-					console.log('id: ' + id);
+					console.log('id: ' + data.id);
 				
 					pbcast.on('deliver', function(msg){
 						lseq.onDelivery(msg);

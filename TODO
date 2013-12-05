@@ -1,8 +1,9 @@
 + utilisation de Require.js pour les dépendances -> Stan
 + choix d'un framework de tests unitaires 
 + implémenter l'ajout et la suppression multiple - Gaetan
-+ implémenter l'arrivée et le départ de peer -> Stan
++ implémenter l'arrivée et le départ de peer -> Stan | à tester
 + faire l'IHM proprement -> Clément
 + commenter -> tout le monde
 + faire tester à plus large échelle
 + refaire le routage dans le projet nodejs
++ modifier seedrandom pour ne plus toucher à l'objet Math
