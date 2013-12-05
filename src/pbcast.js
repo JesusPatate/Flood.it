@@ -198,6 +198,7 @@ function PBCast(){
 	this._peer.on('connection', handleNewConnection);
 
 	function handleOpen(id){
+		console.log('id dans open :' + id);
 		// We join the group of the joinId peer.
 		if(joinId != undefined){
 			var connection = self._peer.connect(joinId);
