@@ -23,16 +23,27 @@ function Editor(contentEditableId){
     this._editor.getSession().on('change', onEdition);
     
     function onEdition(e){
-    var offset = self._editor.getSession().getDocument().positionToIndex(e.data.range.start);
-		
 		if(!self._external){
+			var startOffset = self._editor.getSession().getDocument().positionToIndex(e.data.range.start);
+			var endOffset = self._editor.getSession().getDocument().positionToIndex(e.data.range.end);
+			
+			if(startOffset == endOffset) {
+				++endOffset;
+			}
+			
 			switch(e.data.action){
 				case 'insertText' :
-					self.emit("edit", {type: 'insert', value: e.data.text, offset: offset});
+					var j = 0;
+					for(var i = startOffset ; i < endOffset ; ++i) {
+						self.emit("edit", {type: 'insert', value: e.data.text[j], offset: i});
+						++j;
+					}
 					break;
-                                        
+                
 				case 'removeText' :
-					self.emit("edit", {type: 'delete', offset: offset + 1});
+					for(var i = startOffset ; i < endOffset ; ++i) {
+						self.emit("edit", {type: 'delete', offset: (startOffset + 1)});
+					}
 					break;
                                         
 				default :
@@ -53,6 +64,7 @@ Editor.prototype.constructor = Editor;
  * 		...
  */
 Editor.prototype.insert = function(value, offset){
+	console.log("DBG insert: " + offset);
 	var self = this;
 	var delta = this._asDelta('insertText', offset, value);
 	this._offAir(function(){
@@ -67,8 +79,9 @@ Editor.prototype.insert = function(value, offset){
  * 		...
  */
 Editor.prototype.delete = function(offset){
+	console.log("DBG delete: " + offset);
 	var self = this;
-	var delta = this._asDelta('removeText', offset - 1);
+	var delta = this._asDelta('removeText', offset);
 	this._offAir(function(){
 		self._editor.getSession().getDocument().applyDeltas([delta]);
 	});

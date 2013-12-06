@@ -84,7 +84,7 @@
 					$('#registerName').val() : 'NoName';
 
 				
-				pbcast = new PBCast({port:"8090", host:"localhost"}, 10, 3);
+				pbcast = new PBCast({port:serverPort, host:serverAddress}, 10, 3);
 				pbcast.on('ready', function(id){
 					$('#registerModal').modal('hide');
 					editor = new Editor("editor");

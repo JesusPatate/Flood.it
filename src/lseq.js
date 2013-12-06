@@ -116,8 +116,9 @@ LSEQNode.prototype.ChildNumber = function(fragment, siteID, clock) {
 			if (i == fragment) {
 				found = true;
 			}
-			
-			++num;
+			else {
+				++num;
+			}
 		}
 		
 		if(!found) {
@@ -534,6 +535,8 @@ LSEQ.prototype.insert = function(offset, value, siteID, clock){
     var nextId = this._tree._getId(offset + 1).id;
 
     this.emit('edit', {type: 'insert', value:value, id:id, siteID:siteID, clockEntries:clock});
+        
+    console.log(this.toString());
     
     return id;
 };
@@ -597,6 +600,8 @@ LSEQ.prototype.delete = function(offset){
     this._tree.delete(id, siteID, clock);
 
     this.emit('edit', {type: 'delete', id:id, siteID:siteID, clockEntries:clock});
+        
+    console.log(this.toString());
     
     return id;
 };
@@ -633,6 +638,8 @@ LSEQ.prototype.foreignDelete = function(id, siteID, clock){
 	var offset = parentOffset + num;
 	
     this._tree.delete(id, siteID, clock);
+
+    console.log("DBG LSEQ emit foreignDelete " + offset);
 
     this.emit('foreignDelete', {offset:offset});
 };
@@ -727,12 +734,16 @@ LSEQ.prototype._compareIDs = function(id1, id2) {
  * \brief 
  */
 LSEQ.prototype.onDelivery = function(message){
+    console.log("DBG onDelivery");
+    
     if(!message.error) {
         if(message.local) { // Local site edition
 			if(message.msg.type == 'insert'){
+				console.log("DBG LSEQ insert " + message.msg.offset);
 				this.insert(message.msg.offset, message.msg.value, message.id, message.entries);
 			}
 			else if(message.msg.type == 'delete'){
+				console.log("DBG LSEQ delete " + message.msg.offset);
 				this.delete(message.msg.offset);
 			}
         }
@@ -744,8 +755,14 @@ LSEQ.prototype.onDelivery = function(message){
 				this.foreignDelete(message.msg.id, message.msg.siteID, message.msg.clockEntries);
 			}
         }
+        
+        console.log(this.toString());
     }
     else {
         // Error of causality
     }
 };
+
+LSEQ.prototype.toString = function(){
+	return this._tree.toString();
+}

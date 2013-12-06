@@ -82,7 +82,7 @@
 					$('#joinId').val() : 'NoName';
 
 				
-				pbcast = new PBCast({port: 8090, host: '172.16.134.147'}, joinId);
+				pbcast = new PBCast({port: serverPort, host: serverHost}, joinId);
 				pbcast.on('ready', function(id){
 					$('#registerModal').modal('hide');
 					editor = new Editor("editor");
