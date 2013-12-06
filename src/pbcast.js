@@ -198,6 +198,7 @@ function PBCast(){
 	this._peer.on('connection', handleNewConnection);
 
 	function handleOpen(id){
+		console.log('id dans open :' + id);
 		// We join the group of the joinId peer.
 		if(joinId != undefined){
 			var connection = self._peer.connect(joinId);
@@ -207,14 +208,12 @@ function PBCast(){
 		else{
 			var generator = new EntriesHashGenerator();
 			self._entriesHash = generator.generate(r, k);
-			initialize();
+			initialize([]);
 		}
 	}
 
 	function handleData(connection){
-		return function(data){
-			console.log(JSON.stringify(data));
-			 
+		return function(data){			 
 			switch(data.type){
 				case PBCast.JOIN_REQ:
 					handleInitializationRequest(connection);
@@ -225,7 +224,7 @@ function PBCast(){
 					break;
 
 				case PBCast.MSG:
-					handleMessage(data.data, connection.peer);
+					handleMessage(data.data);
 					break;
 
 				case PBCast.QUIT:
@@ -241,6 +240,7 @@ function PBCast(){
 	function handleQuit(connection){
 		return function(){			
 			self._connections.remove(connection.peer);
+			self.emit('disconnectedUser', connection.peer);
 		};
 	}
 	
@@ -266,6 +266,7 @@ function PBCast(){
 	}
 	
 	function handleNewConnection(connection){
+		self.emit('connectedUser', connection.peer);
 		if(!self._connections.hasKey(connection.peer)){
 			handleOpenedConnection(connection)();
 		}
@@ -296,18 +297,19 @@ function PBCast(){
 		self._entriesHash = EntriesHash.fromLitteralObject(data.entriesHash);
 		
 		if(self._groupPeerToJoin == 0){
-			initialize();
+			var knownIds = data.ids.concat([joinId]);
+			initialize(knownIds);
 		}
 	}
 	
-	function initialize(){
+	function initialize(knownIds){
 		var clocks = initializeClocks(self._entriesHash.m());
 		var entries = self._entriesHash.hash(self._peer.id);
 		self._qvc = new QVC(clocks, entries);
 		self.ready = true;
 		emptyLocalCache();
 		emptyCache();
-		self.emit('ready', self._peer.id);
+		self.emit('ready', {id: self._peer.id, knownIds: knownIds});
 	}
 	
 	function initializeClocks(r){
@@ -334,8 +336,7 @@ function PBCast(){
 		}
 	}
 	
-	// TODO : id utile ??
-	function handleMessage(message, id){
+	function handleMessage(message){
 		var qvc = QVC.fromLitteralObject(message.qvc);
 	
 		if(qvc.isCausallyReady(self._qvc)){
@@ -346,7 +347,7 @@ function PBCast(){
 			checkNoDelivered();
 		}
 		else{
-			self._notDelivered.push({id: id, msg: message});
+			self._notDelivered.push({msg: message});
 		}
 	}
 

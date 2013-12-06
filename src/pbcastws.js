@@ -92,8 +92,8 @@ function PBCast(serverLocation){
 		if(qvc.isCausallyReady(self._qvc)){
 			self._qvc.incrementFrom(qvc);
 			var error = detectError(qvc);
-			self.emit('deliver', {error: error, clocks: qvc.clocks(), id: message.id, local: false, msg: message.msg});
-			self._delivered.add({qvc: message.qvc});
+			self.emit('deliver', {error: error, local: false, msg: message.msg});
+			self._delivered.add({qvc: qvc});
 			checkNoDelivered();
 		}
 		else{
@@ -112,8 +112,8 @@ function PBCast(serverLocation){
 				self._notDelivered.splice(i, 1);
 				self._qvc.incrementFrom(qvc);
 				var error = detectError(qvc);
-				self.emit('deliver', {error: error, clocks: qvc.clocks(), id: message.id, local: false, msg: message.msg});
-				self._delivered.add({qvc: message.msg.qvc});
+				self.emit('deliver', {error: error, local: false, msg: message.msg});
+				self._delivered.add({qvc: qvc});
 			}
 			else{
 				i++;
@@ -129,7 +129,7 @@ function PBCast(serverLocation){
 		
 		while(inferiorToCurrent && inferiorOrEqualToDelivered && !end){
 			try{
-				var deliveredQvc = QVC.fromLitteralObject(it.next()[1]);
+				var deliveredQvc = it.next()[1];
 				inferiorOrEqualToDelivered = qvc.isInferiorOrEqual(deliveredQvc);
 			}
 			catch(e){
@@ -148,7 +148,7 @@ PBCast.prototype.constructor = PBCast;
 /**
  * \brief ...
  */
-PBCast.prototype.getId = function(){
+PBCast.prototype.id = function(){
 	var id;
 	
 	if(this.ready){
@@ -166,7 +166,7 @@ PBCast.prototype.getId = function(){
  */
 PBCast.prototype.send = function(message){
 	if(this.ready){
-		var msg = JSON.stringify({type: 'MSG', data: {qvc: this._qvc.toLitteralObject(), id: this._id, msg: message}});
+		var msg = JSON.stringify({type: 'MSG', data: {qvc: this._qvc.toLitteralObject(), msg: message}});
 		this._websocket.send(msg);
 	}
 	else{
@@ -183,7 +183,7 @@ PBCast.prototype.send = function(message){
 PBCast.prototype.localSend = function(message){
 	if(this.ready){
 		this._qvc.increment();
-		this.emit('deliver', {error: false, clocks: this._qvc.clocks(), id: this._id, local: true, msg: message});
+		this.emit('deliver', {error: false, entries: this._qvc.entries(), id: this._id, local: true, msg: message});
 	}
 	else{
 		this._localCache.push(message);

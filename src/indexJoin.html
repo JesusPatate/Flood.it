@@ -87,7 +87,7 @@
 					$('#registerModal').modal('hide');
 					editor = new Editor("editor");
 					lseq = new LSEQ();
-					console.log('id: ' + id);
+					console.log('id: ' + data.id);
 				
 					pbcast.on('deliver', function(msg){
 						lseq.onDelivery(msg);

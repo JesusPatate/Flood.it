@@ -3,15 +3,63 @@
 	<head>
 		<meta charset="utf-8"/>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>Logoot Full JS Implementation</title>
+		<!-- <title>Logoot Full JS Implementation</title> -->
+		<title>Flood.it</title>
 		<link rel="stylesheet" type="text/css" href="bootstrap.min.css">
 		<style type="text/css" media="screen">
+			/* editor */
 			#editor { 
 				position: absolute;
 				top: 0;
 				right: 0;
 				bottom: 0;
 				left: 0;
+			}
+
+			/* tools */
+			.fleft {
+				display: block;
+				float: left;
+			}
+			.fright {
+				display: block;
+				float: right;
+			}
+			.clearb {
+				display: block;
+				clear: both;
+			}
+
+			.fullWidth {
+				width: 100%;
+			}
+
+			/* form */
+			.modal-body h2.nextmodalstep {
+				margin-top: 1em;
+			}
+
+			.modal-header {
+				background-color: #f4f4f4; 
+			}
+
+			.modal-switch {
+				padding: 0.6em;
+				border: 1px solid #ddd;
+				border-radius: 8px; 
+			}
+			.modal-switch > div {
+				margin-top: 1em; 
+			}
+
+			.modal-connect {
+				padding: 0.6em;
+				border: 1px solid #ddd;
+				border-radius: 8px; 
+			}
+
+			.add-on {
+
 			}
 		</style>
 	</head>
@@ -22,25 +70,64 @@
 		<!-- Register Modal -->
 		<div class="modal fade" id="registerModal">
 			<div class="modal-header">
-				<h3>Register</h3>
+				<h1>Flood.it</h1>
 			</div>
 			<div class="modal-body">
-				<label>
-				To start, register with enter logoot location, port and your name:
-				</label>
-			<div class="form-inline">
-				<div class="input-prepend input-append">
-					<span class="add-on">ws://</span><input type="text" class="span2"
-						id="registerAddress"><span  class="add-on">:</span><input
-						type="text" class="span1" id="registerPort">
-				</div>
 				
-				<input type="text" id="registerName" class="span2" placeholder="Name">
+				<h2>Connect</h2>
+				<div class="form-inline">
+					<div class="modal-connect">
+						<div class="input-prepend input-append">
+							<label for="registerAddress">
+								<span class="add-on">Address</span>
+								<input type="text" class="span2" id="registerAddress">
+							</label>
+							<label for="registerPort">
+								<span class="add-on">Port</span>
+								<input type="text" class="span1" id="registerPort">
+							</label>
+							<div>
+								<label for="registerName">
+									<span class="add-on">Nickname</span>
+									<input type="text" id="registerName" class="span2" placeholder="Name">
+								</label>
+							</div>
+						</div>
+					</div>
+					
+					<h2 class="nextmodalstep">Edit</h2>
+					<div class="modal-switch">
+						<div>
+							<div class="input-prepend input-append fullWidth">
+					      <label for="bNewDocument1" class="radio fleft">
+				        	<input type="radio" name="documentDialog" class="radio1" id="bNewDocument1" value="1" checked="checked" />
+					        Create new document
+					    	</label>
+					    	<label for="registerFile" class="fright">
+					    		<span class="add-on">Title</span>
+					      	<input type="text" id="registerFile" class="span4" placeholder="Untitled" />
+					      </label>
+					    </div>
+						</div>
+						<div>
+							<div class="input-prepend input-append fullWidth">
+					      <label for="bNewDocument0" class="radio fleft">
+				        	<input type="radio" name="documentDialog" class="radio1" id="bNewDocument0" value="0" />
+					        Join existing document
+					    	</label>
+					    	<label for="joinID" class="fright">
+					    		<span class="add-on">ID</span>
+					      	<input type="text" id="joinID" class="span2" placeholder="ID" disabled="disabled"/>
+					      </label>
+					    </div>
+						</div>
+					</div>
+
+				</div>
 			</div>
-		</div>
 			<div class="modal-footer">
 				<button class="btn btn-primary" id="registerSubmit"
-				data-loading-text="Register ...">Register</button>
+				data-loading-text="Register ...">Start</button>
 			</div>
 		</div>
 
