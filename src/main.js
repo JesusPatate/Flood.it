@@ -28,10 +28,11 @@ function register(){
 
 	$('#documenttitle').html( documentTitle ); 
 
-	bNewDocument = $('#bNewDocument1').val( 'checked' );
+	bNewDocument = $('#bNewDocument1').attr( 'checked' ); 
 	if ( bNewDocument ) {
 		pbcast = new PBCast({port:"8090", host:"localhost"}, 10, 3);
 	} else {
+		var joinId = $( '#joinID' ).val(); 
 		pbcast = new PBCast({port:"8090", host:"localhost"}, joinId);
 	}
 
@@ -39,7 +40,9 @@ function register(){
 		'ready', 
 		function( ids ) {
 			
-			var userid = pbcast.id(); 
+			var userid = ids.id; 
+			var theothers = ids.knownIds; 
+
 			console.log( 'pbcast id: ' + userid ); 
 			
 
@@ -50,7 +53,11 @@ function register(){
 				'<div class="addon">' + userName + ' (' + userid + ')</div>'
 			).hide().appendTo( '#collaborators' ).fadeIn( 300 ); 
 
-
+			for ( var collabo in theothers ) {
+				$(
+					'<div class="addon">' + "" + ' (' + theothers[collabo] + ')</div>'
+				).hide().appendTo( '#collaborators' ).fadeIn( 300 ); 
+			}
 
 			editor = new Editor("editor");
 			lseq = new LSEQ();

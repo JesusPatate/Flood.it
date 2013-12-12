@@ -298,6 +298,7 @@ function PBCast(){
 		
 		if(self._groupPeerToJoin == 0){
 			var knownIds = data.ids.concat([joinId]);
+			console.log( 'knownIds: ' + knownIds ); 
 			initialize(knownIds);
 		}
 	}
