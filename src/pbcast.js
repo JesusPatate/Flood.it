@@ -260,8 +260,9 @@ function PBCast(){
 				else{
 					self._groupPeerJoined++;
 
-					if(self._groupPeerJoined == self._groupPeerToJoin){
-						initialize();
+					if(self._groupPeerJoined == self._groupPeerToJoin.length){
+						var knownIds = self._groupPeerToJoin.concat([joinId]);
+						initialize(knownIds);
 					}
 				}
 			}
@@ -289,7 +290,7 @@ function PBCast(){
 	
 	function handleInitializationResponse(data){
 		// Get ids of the group.
-		self._groupPeerToJoin = data.ids.length;
+		self._groupPeerToJoin = data.ids;
 		
 		for(var i = 0; i < data.ids.length; i++){
 			var connection = self._peer.connect(data.ids[i]);
@@ -300,7 +301,7 @@ function PBCast(){
 		self._entriesHash = EntriesHash.fromLitteralObject(data.entriesHash);
 		
 		if(self._groupPeerToJoin == 0){
-			var knownIds = data.ids.concat([joinId]);
+			var knownIds = self._groupPeerToJoin.concat([joinId]);
 			initialize(knownIds);
 		}
 	}
