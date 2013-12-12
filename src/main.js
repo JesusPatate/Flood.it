@@ -45,12 +45,12 @@ function register(){
 			$('#registerModal').modal('hide');
 
 			$(
-				'<div class="addon">' + userName + ' (' + userid + ')</div>'
+				'<div class="addon" id="' + theothers[collabo] + '">' + userName + ' (' + userid + ')</div>'
 			).hide().appendTo( '#collaborators' ).fadeIn( 300 ); 
 
 			for ( var collabo in theothers ) {
 				$(
-					'<div class="addon">' + "" + ' (' + theothers[collabo] + ')</div>'
+					'<div class="addon" id="' + theothers[collabo] + '">' + "" + '(' + theothers[collabo] + ')</div>'
 				).hide().appendTo( '#collaborators' ).fadeIn( 300 ); 
 			}
 
@@ -77,6 +77,26 @@ function register(){
 		
 			lseq.on('foreignInsert', function(msg)	{
 					editor.insert(msg.value, msg.offset);
+			});
+
+			pbcast.on('connectedUser', function(newuserid){
+				if ( $( '#' + newuserid ).length < 1 ) {
+					$(
+						'<div class="addon" id="' + newuserid + '">' + "" + '(' + newuserid + ')</div>'
+					).hide().appendTo( '#collaborators' ).fadeIn( 300 ); 
+				}
+			});
+
+			pbcast.on('disconnectedUser', function(olduserid){
+				if ( $( '#' + olduserid ).length > 0 ) {
+					// remove from the list 
+					$( '#' + olduserid ).fadeOut( 
+						300, 
+						function() { 
+							$( this ).remove(); 
+						}
+					); 
+				}
 			});
 		}
 	);
