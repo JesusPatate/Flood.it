@@ -47,6 +47,12 @@ function PBCast(serverLocation){
 				handleMessage(obj.data);
 				break;
 				
+			case 'USER_CONNECTED':
+				break;
+			
+			case 'USER_DISCONNECTED':
+				break;
+				
 			default:
 				break;
 		}
