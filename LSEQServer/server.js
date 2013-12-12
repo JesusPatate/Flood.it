@@ -184,6 +184,7 @@ function onWsRequest(req){
 					index = users.push(user) - 1;
 					sendJoinAttributes(user);
 					sendContext(user);
+					sendMessage({type: 'USER_CONNECTED', data: {id: user.id}});
 					break;
 					
 				case 'MSG':
@@ -198,9 +199,22 @@ function onWsRequest(req){
 
 	// At user disconection, he is remove from broadcast groupe.
 	connection.on('close', function(connection){
+		var id;
+		var i = 0;
+		
+		while(i < users.length && id != undefined){
+			if(users[i].connection = connection){
+				id = users[i].id;
+			}
+			
+			i++;
+		}
+		
 		if(index !== false){
 			users.splice(index, 1); 
-		}
+		}		
+		
+		sendMessage({type: 'USER_DISCONNECTED', data: {id: id}});
 	});
 }
 
