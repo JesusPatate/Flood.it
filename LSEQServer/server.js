@@ -118,6 +118,11 @@ function onHttpRequest(req, res){
 			res.writeHeader(200, {'Content-Type': 'application/javascript'});  
 			res.end(fs.readFileSync('public/js/pbcast.js', 'utf8'));  
 			break;
+		
+		case '/main.js':
+			res.writeHeader(200, {'Content-Type': 'application/javascript'});  
+			res.end(fs.readFileSync('public/js/main.js', 'utf8'));  
+			break;
     
 		case '/editor.js':
 			res.writeHeader(200, {'Content-Type': 'application/javascript'});  
