@@ -1,5 +1,5 @@
 /****************************************
- * Dependances : seedrandom.js
+ * Dependancies : seedrandom.js
  ***************************************/
 
 /*!
@@ -117,7 +117,8 @@ LSEQNode.prototype.ChildNumber = function(fragment, siteID, clock) {
 				found = true;
 			}
 			else {
-				++num;
+				num += this.children[i].positions.length;
+				num += this.children[i].size;
 			}
 		}
 		
@@ -204,9 +205,6 @@ function LSEQTree(base, boundary){
         var offset = Math.floor(Math.random() * step) + 1;
         return upperBound - offset;
     };
-    
-    // Math.seedrandom();
-    // this._seed = Math.floor(Math.random() * (10000 - 100) + 100);
 
     this._seed = '123654';
     this._root = new LSEQNode(null);
@@ -749,9 +747,11 @@ LSEQ.prototype.onDelivery = function(message){
         }
         else { // Distant site edition
 			if(message.msg.type == 'insert'){
+				console.log("DBG LSEQ foreignInsert " + message.msg.id);
 				this.foreignInsert(message.msg.id, message.msg.value, message.msg.siteID, message.msg.clockEntries);
 			}
 			else if(message.msg.type == 'delete'){
+				console.log("DBG LSEQ foreignDelete " + message.msg.id);
 				this.foreignDelete(message.msg.id, message.msg.siteID, message.msg.clockEntries);
 			}
         }
