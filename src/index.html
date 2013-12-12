@@ -7,15 +7,6 @@
 		<title>Flood.it</title>
 		<link rel="stylesheet" type="text/css" href="bootstrap.min.css">
 		<style type="text/css" media="screen">
-			/* editor */
-			#editor { 
-				position: absolute;
-				top: 0;
-				right: 0;
-				bottom: 0;
-				left: 0;
-			}
-
 			/* tools */
 			.fleft {
 				display: block;
@@ -58,14 +49,90 @@
 				border-radius: 8px; 
 			}
 
-			.add-on {
+			input[type="text"] {
+				margin-left: -4px; 
+			}
 
+			/* toolbar */
+			#toolbarcontainer {
+				z-index: 2;
+				margin : 0; 
+				padding : 0; 
+				position : fixed; 
+				left : 0; 
+				right : 0; 
+				top : 0; 
+				height : 96px; 
+				background: rgba( 252, 252, 252, 0.9 ); 
+				overflow: hidden; 
+			}
+			.addon {
+				float: left; 
+				margin: 8px; 
+				padding: 8px; 
+				background: rgba( 220, 220, 220, 0.9 ); 
+				border-radius: 4px; 
+			}
+			.nobgaddon {
+				float: left; 
+				margin: 8px; 
+				padding: 8px; 
+				border-radius: 4px; 
+			}
+			#documenttitle {
+				margin-top: 12px; 
+				font-style: italic; 
+			}
+
+			/* editor */
+			/* 
+			#editor {
+				width: 100%;
+				height: 100%;
+			} */
+			#editor {
+				z-index : 1; 
+				margin: 0; 
+				padding : 0; 
+				position : fixed; 
+				left: 0;
+				right: 0;
+				bottom: 0; 
+				top: 96px;
+				overflow-y : auto; 
+				overflow-x : auto; 
+				display : block;
+			}
+
+			/* bottom toolbar */
+			#bottomtoolbarcontainer {
+				z-index: 3;
+				margin : 0; 
+				padding : 0; 
+				position : fixed; 
+				left : 0; 
+				right : 0; 
+				bottom : 0; 
+				height : 60px; 
+				background: rgba( 252, 252, 252, 0.9 ); 
 			}
 		</style>
 	</head>
 	
 	<body>
+		<div id="toolbarcontainer">
+			<p>
+				<h1 class="nobgaddon"><a href="index.html">Flood.it</a></h1>
+				<h2 class="nobgaddon">LSEQ Editor</h2>
+				<h3 id="documenttitle" class="addon"></h3>
+			</p>
+		</div>
 		<div id="editor"></div>
+		<div id="bottomtoolbarcontainer">
+			<div id="collaborators">
+				<div class="nobgaddon">Collaborators: </div>
+			</div>
+		</div>
 
 		<!-- Register Modal -->
 		<div class="modal fade" id="registerModal">
@@ -143,79 +210,7 @@
 		<script src="md5.js" type="text/javascript" charset="utf-8"></script>
 		<script src="pbcast.js" type="text/javascript" charset="utf-8"></script>
 		<script src="editor.js" type="text/javascript" charset="utf-8"></script>
-		<script type="application/javascript">
-			function  adaptePaperToScreen(){
-				var MIN_HEIGHT = 200;
-				var paper = document.getElementById('editor');
-				var newHeight = window.innerHeight - paper.offsetTop - 60;
-				paper.style.height = Math.max(MIN_HEIGHT, newHeight) + 'px';
-			}
-    
-			window.addEventListener("load", adaptePaperToScreen, false);
-			window.addEventListener("resize", adaptePaperToScreen, false);
-	
-			var editor;
-			var lseq;
-			var pbcast;
-
-
-			function register(){
-				$('#registerSubmit').button('loading');
-
-				// Get Value and connect to LogootEditor.
-				var serverAddress = ($('#registerAddress').val().length > 0) ?
-					$('#registerAddress').val() : '127.0.0.1';
-				var serverPort = ($('#registerPort').val().length > 0) ?
-					$('#registerPort').val() : '1337';
-				var userName = ($('#registerName').val().length > 0) ? 
-					$('#registerName').val() : 'NoName';
-
-				
-				pbcast = new PBCast({port:serverPort, host:serverAddress}, 10, 3);
-				pbcast.on('ready', function(id){
-					$('#registerModal').modal('hide');
-					editor = new Editor("editor");
-					lseq = new LSEQ();
-					console.log('id: ' + id);
-				
-					pbcast.on('deliver', function(msg){
-						lseq.onDelivery(msg);
-					});
-				
-					lseq.on('edit', function(msg){
-						pbcast.send(msg);
-					});
-				
-					editor.on('edit', function(msg){
-						pbcast.localSend(msg);
-					});
-				
-					lseq.on('foreignDelete', function(msg){
-						editor.delete(msg.offset);
-					});
-				
-					lseq.on('foreignInsert', function(msg){
-						editor.insert(msg.value, msg.offset);
-					});
-				});
-			}
-
-			$(document).ready(function(){
-				$('#registerAddress').attr('placeholder', document.domain);
-				$('#registerPort').attr('placeholder', window.location.port);
-				$('#registerModal').modal({
-					backdrop: 'static',
-					keyboard: false,
-					show: true 
-				});
-				$('#registerSubmit').click(register);
-				$('#registerName').keyup(function(e){
-					if(e.keyCode == 13){
-						register(); 
-					}
-				});
-			});
-		</script>
+		<script src="main.js" type="application/javascript" charset="utf-8"></script>
 	</body>
 </html>
 

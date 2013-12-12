@@ -198,7 +198,6 @@ function PBCast(){
 	this._peer.on('connection', handleNewConnection);
 
 	function handleOpen(id){
-		console.log('id dans open :' + id);
 		// We join the group of the joinId peer.
 		if(joinId != undefined){
 			var connection = self._peer.connect(joinId);
@@ -224,9 +223,13 @@ function PBCast(){
 					break;
 
 				case PBCast.MSG:
+					console.log('Message reçu');
 					handleMessage(data.data);
 					break;
-
+					
+				case PBCast.JOINED:
+					break;
+				
 				case PBCast.QUIT:
 					handleQuit(connection)();
 					break;
@@ -257,8 +260,9 @@ function PBCast(){
 				else{
 					self._groupPeerJoined++;
 
-					if(self._groupPeerJoined == self._groupPeerToJoin){
-						initialize();
+					if(self._groupPeerJoined == self._groupPeerToJoin.length){
+						var knownIds = self._groupPeerToJoin.concat([joinId]);
+						initialize(knownIds);
 					}
 				}
 			}
@@ -286,7 +290,7 @@ function PBCast(){
 	
 	function handleInitializationResponse(data){
 		// Get ids of the group.
-		self._groupPeerToJoin = data.ids.length;
+		self._groupPeerToJoin = data.ids;
 		
 		for(var i = 0; i < data.ids.length; i++){
 			var connection = self._peer.connect(data.ids[i]);
@@ -297,7 +301,7 @@ function PBCast(){
 		self._entriesHash = EntriesHash.fromLitteralObject(data.entriesHash);
 		
 		if(self._groupPeerToJoin == 0){
-			var knownIds = data.ids.concat([joinId]);
+			var knownIds = self._groupPeerToJoin.concat([joinId]);
 			initialize(knownIds);
 		}
 	}
@@ -347,6 +351,7 @@ function PBCast(){
 			checkNoDelivered();
 		}
 		else{
+			console.log('Non prêt causalement: ' + JSON.stringify(message));
 			self._notDelivered.push({msg: message});
 		}
 	}
@@ -397,7 +402,8 @@ PBCast.prototype.constructor = PBCast;
 PBCast.JOIN_REQ = 0;
 PBCast.JOIN_RESP = 1;
 PBCast.MSG = 2;
-PBCast.QUIT = 3;
+PBCast.JOINED = 3;
+PBCast.QUIT = 4;
 
 /**
  * \brief ...
@@ -436,6 +442,7 @@ PBCast.prototype.send = function(message){
 PBCast.prototype._broadcast = function(message){
 	for(var connEntry in this._connections.iterator()){
 		connEntry[1].send(message);
+		console.log('Message envoyé');
 	}
 };
 
