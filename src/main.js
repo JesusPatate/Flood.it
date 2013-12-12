@@ -15,133 +15,111 @@ var pbcast;
 
 function register(){
 	$('#registerSubmit').button('loading');
-
-	// Get Value and connect to LogootEditor.
 	var serverAddress = ($('#registerAddress').val().length > 0) ?
 		$('#registerAddress').val() : '127.0.0.1';
 	var serverPort = ($('#registerPort').val().length > 0) ?
 		$('#registerPort').val() : '1337';
 	var userName = ($('#registerName').val().length > 0) ? 
 		$('#registerName').val() : 'NoName';
-	var documentTitle = ( $('#registerFile').val().length > 0 ) && ( !$('#registerFile').prop( 'disabled' ) )? 
+	var documentTitle = ($('#registerFile').val().length > 0) && (!$('#registerFile').prop('disabled'))? 
 		$('#registerFile').val() : 'Untitled'; 
+	$('#documenttitle').html(documentTitle); 
 
-	$('#documenttitle').html( documentTitle ); 
-
-	bNewDocument = $('#bNewDocument1').attr( 'checked' ); 
-	if ( bNewDocument ) {
-		pbcast = new PBCast({port: serverPort, host: serverAddress}, 10, 3);
-	} else {
-		var joinId = $( '#joinID' ).val(); 
-		pbcast = new PBCast({port: serverPort, host: serverAddress}, joinId);
+	var isNewDocument = $('#bNewDocument1').attr('checked'); 
+	var server = {port: serverPort, host: serverAddress};
+	
+	if(isNewDocument){
+		pbcast = new PBCast(server, 10, 3);
+	} 
+	else{
+		var joinId = $('#joinID').val(); 
+		pbcast = new PBCast(server, joinId);
 	}
 	
-	pbcast.on(
-		'ready', 
-		function( ids ) {
-			
-			var userid = ids.id; 
-			var theothers = ids.knownIds; 
-			$('#registerModal').modal('hide');
+	pbcast.on('ready', function(data){
+		$('#registerModal').modal('hide');
+		$('<div class="addon" id="' + data.id + '">' + userName + ' (' + data.id + ')</div>')
+			.hide().appendTo('#collaborators').fadeIn(300);
 
-			$(
-				'<div class="addon" id="' + theothers[collabo] + '">' + userName + ' (' + userid + ')</div>'
-			).hide().appendTo( '#collaborators' ).fadeIn( 300 ); 
-
-			for ( var collabo in theothers ) {
-				$(
-					'<div class="addon" id="' + theothers[collabo] + '">' + "" + '(' + theothers[collabo] + ')</div>'
-				).hide().appendTo( '#collaborators' ).fadeIn( 300 ); 
-			}
-
-			editor = new Editor("editor");
-			lseq = new LSEQ();
-
-
-
-			pbcast.on('deliver', function(msg){
-				lseq.onDelivery(msg);
-			});
-		
-			lseq.on('edit', function(msg){
-				pbcast.send(msg);
-			});
-		
-			editor.on('edit', function(msg){
-				pbcast.localSend(msg);
-			});
-		
-			lseq.on('foreignDelete', function(msg){
-				editor.delete(msg.offset);
-			});
-		
-			lseq.on('foreignInsert', function(msg)	{
-					editor.insert(msg.value, msg.offset);
-			});
-
-			pbcast.on('connectedUser', function(newuserid){
-				if ( $( '#' + newuserid ).length < 1 ) {
-					$(
-						'<div class="addon" id="' + newuserid + '">' + "" + '(' + newuserid + ')</div>'
-					).hide().appendTo( '#collaborators' ).fadeIn( 300 ); 
-				}
-			});
-
-			pbcast.on('disconnectedUser', function(olduserid){
-				if ( $( '#' + olduserid ).length > 0 ) {
-					// remove from the list 
-					$( '#' + olduserid ).fadeOut( 
-						300, 
-						function() { 
-							$( this ).remove(); 
-						}
-					); 
-				}
-			});
+		for(var i = 0; i < data.knownIds.length; i++){
+			$('<div class="addon" id="' + data.knownIds[i] + '">' + "" + '(' + data.knownIds[i] + ')</div>')
+				.hide().appendTo('#collaborators').fadeIn(300); 
 		}
-	);
+
+		editor = new Editor("editor");
+		lseq = new LSEQ();
+
+		pbcast.on('deliver', function(msg){
+			lseq.onDelivery(msg);
+		});
+		
+		lseq.on('edit', function(msg){
+			pbcast.send(msg);
+		});
+		
+		editor.on('edit', function(msg){
+			pbcast.localSend(msg);
+		});
+		
+		lseq.on('foreignDelete', function(msg){
+			editor.delete(msg.offset);
+		});
+		
+		lseq.on('foreignInsert', function(msg)	{
+			editor.insert(msg.value, msg.offset);
+		});
+
+		pbcast.on('connectedUser', function(newuserid){
+			if($('#' + newuserid ).length < 1){
+				$('<div class="addon" id="' + newuserid + '">' + "" + '(' + newuserid + ')</div>'
+					).hide().appendTo('#collaborators').fadeIn(300); 
+			}
+		});
+
+		pbcast.on('disconnectedUser', function(olduserid){
+			if($('#' + olduserid ).length > 0){
+				// remove from the list 
+				$('#' + olduserid ).fadeOut(300, function(){ 
+					$(this).remove(); 
+				}); 
+			}
+		});
+	});
 }
 
-$(document).ready(
-	function() {
-		$('#registerAddress').attr('placeholder', document.domain);
-		$('#registerPort').attr('placeholder', window.location.port);
-		$('#registerModal').modal({
-			backdrop: 'static',
-			keyboard: false,
-			show: true 
-		});
-		$('#registerSubmit').click(register);
-		$('#registerName').keyup(function(e){
-			if(e.keyCode == 13){
-				register(); 
-			}
-		});
+$(document).ready(function(){
+	$('#registerAddress').attr('placeholder', document.domain);
+	$('#registerPort').attr('placeholder', window.location.port);
+	$('#registerModal').modal({
+		backdrop: 'static',
+		keyboard: false,
+		show: true 
+	});
+	$('#registerSubmit').click(register);
+	$('#registerName').keyup(function(e){
+		if(e.keyCode == 13){
+			register(); 
+		}
+	});
 
-		// modal switch handler 
-		var statenow = 1;
-		$('#bNewDocument1').click(
-			function(){
-				$('#bNewDocument1').prop( 'checked', true ); 
-				// $('#bNewDocument0').prop( 'checked', false ); 
-				$('#registerFile').prop( 'disabled', false ).focus();
-				$('#joinID').prop( 'disabled', true );
-				statenow = 1; 
-			}
-		);
-		$('#bNewDocument0').click(
-			function(){
-				// $('#bNewDocument1').prop( 'checked', false ); 
-				$('#bNewDocument0').prop( 'checked', true ); 
-				$('#registerFile').prop( 'disabled', true );
-				$('#joinID').prop( 'disabled', false ).focus(); 
-				statenow = 0; 
-			}
-		);
+	// modal switch handler 
+	var statenow = 1;
+	$('#bNewDocument1').click(function(){
+		$('#bNewDocument1').prop('checked', true); 
+		// $('#bNewDocument0').prop( 'checked', false ); 
+		$('#registerFile').prop('disabled', false).focus();
+		$('#joinID').prop('disabled', true);
+		statenow = 1; 
+	});
+	
+	$('#bNewDocument0').click(function(){
+		// $('#bNewDocument1').prop( 'checked', false ); 
+		$('#bNewDocument0').prop('checked', true); 
+		$('#registerFile').prop('disabled', true);
+		$('#joinID').prop('disabled', false).focus(); 
+		statenow = 0; 
+	});
 
-		// initial focus 
-		$('#registerAddress').focus(); 
-	}
-); 
-
-
+	// initial focus 
+	$('#registerAddress').focus(); 
+});

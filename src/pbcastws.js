@@ -67,7 +67,7 @@ function PBCast(serverLocation){
 		self.ready = true;
 		emptyLocalCache();
 		emptyCache();
-		self.emit('ready', self._id);
+		self.emit('ready', {id: self._id, knownIds: data.knownIds});
 	}
 	
 	function initializeClocks(r){

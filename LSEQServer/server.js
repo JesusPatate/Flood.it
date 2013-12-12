@@ -47,15 +47,44 @@ UUID.gen = function(){
 
 function sendContext(user){
 	// Send existing messages.
-	for (var i = 0; i < messages.length; i++){
+	for(var i = 0; i < messages.length; i++){
 		var msg = JSON.stringify({type: 'MSG', data: messages[i]});
 		user.connection.sendUTF(msg);
 	}
 }
 
 function sendJoinAttributes(user){
-	var msg = JSON.stringify({type: 'JOIN_RESP', data: {id: user.id, r: entriesHashFunction._m, entries: entriesHashFunction.hash(user.id)}});
+	var msg = JSON.stringify({type: 'JOIN_RESP', data: {id: user.id, knownIds: getKnownIds(user.id), r: entriesHashFunction._m, entries: entriesHashFunction.hash(user.id)}});
 	user.connection.sendUTF(msg);
+}
+
+function getKnownIds(except){
+	var knownIds = [];
+	
+	for(var i = 0; i < users.length; i++){
+		var id = users[i].id;
+		
+		if(id != except){
+			knownIds.push(id);
+		}
+	}
+	
+	return knownIds;
+}
+
+function getIdFromConnection(connection){
+	var id;
+	var i = 0;
+		
+	while(i < users.length && id == undefined){
+		if(users[i].connection == connection){
+			id = users[i].id;
+		}
+			
+		i++;
+	}
+	
+	return id;
 }	
 
 /*!
@@ -189,7 +218,7 @@ function onWsRequest(req){
 					index = users.push(user) - 1;
 					sendJoinAttributes(user);
 					sendContext(user);
-					sendMessage({type: 'USER_CONNECTED', data: {id: user.id}});
+					sendMessage({type: 'USER_CONNECTED', data: {id: user.id}}, connection);
 					break;
 					
 				case 'MSG':
@@ -203,23 +232,14 @@ function onWsRequest(req){
 	});
 
 	// At user disconection, he is remove from broadcast groupe.
-	connection.on('close', function(connection){
-		var id;
-		var i = 0;
-		
-		while(i < users.length && id != undefined){
-			if(users[i].connection = connection){
-				id = users[i].id;
-			}
-			
-			i++;
-		}
+	connection.on('close', function(msg){
+		var id = getIdFromConnection(connection);
 		
 		if(index !== false){
 			users.splice(index, 1); 
 		}		
 		
-		sendMessage({type: 'USER_DISCONNECTED', data: {id: id}});
+		sendMessage({type: 'USER_DISCONNECTED', data: {id: id}}, connection);
 	});
 }
 
