@@ -23,77 +23,103 @@ function register(){
 		$('#registerPort').val() : '1337';
 	var userName = ($('#registerName').val().length > 0) ? 
 		$('#registerName').val() : 'NoName';
+	var documentTitle = ( $('#registerFile').val().length > 0 ) && ( !$('#registerFile').prop( 'disabled' ) )? 
+		$('#registerFile').val() : 'Untitled'; 
 
-	bNewDocument = ( $('#bNewDocument').val() > 1 );
+	$('#documenttitle').html( documentTitle ); 
+
+	bNewDocument = $('#bNewDocument1').val( 'checked' );
 	if ( bNewDocument ) {
 		pbcast = new PBCast({port:"8090", host:"localhost"}, 10, 3);
 	} else {
 		pbcast = new PBCast({port:"8090", host:"localhost"}, joinId);
 	}
-	pbcast.on('ready', function(id){
-		$('#registerModal').modal('hide');
-		editor = new Editor("editor");
-		lseq = new LSEQ();
-		console.log('id: ' + id);
-	
-		pbcast.on('deliver', function(msg){
-			lseq.onDelivery(msg);
-		});
-	
-		lseq.on('edit', function(msg){
-			pbcast.send(msg);
-		});
-	
-		editor.on('edit', function(msg){
-			pbcast.localSend(msg);
-		});
-	
-		lseq.on('foreignDelete', function(msg){
-			editor.delete(msg.offset);
-		});
-	
-		lseq.on('foreignInsert', function(msg){
-			editor.insert(msg.value, msg.offset);
-		});
-	});
+
+	pbcast.on(
+		'ready', 
+		function( ids ) {
+			
+			var userid = pbcast.id(); 
+			console.log( 'pbcast id: ' + userid ); 
+			
+
+
+			$('#registerModal').modal('hide');
+
+			$(
+				'<div class="addon">' + userName + ' (' + userid + ')</div>'
+			).hide().appendTo( '#collaborators' ).fadeIn( 300 ); 
+
+
+
+			editor = new Editor("editor");
+			lseq = new LSEQ();
+
+
+
+			pbcast.on('deliver', function(msg){
+				lseq.onDelivery(msg);
+			});
+		
+			lseq.on('edit', function(msg){
+				pbcast.send(msg);
+			});
+		
+			editor.on('edit', function(msg){
+				pbcast.localSend(msg);
+			});
+		
+			lseq.on('foreignDelete', function(msg){
+				editor.delete(msg.offset);
+			});
+		
+			lseq.on('foreignInsert', function(msg)	{
+					editor.insert(msg.value, msg.offset);
+			});
+		}
+	);
 }
 
-$(document).ready(function(){
-	$('#registerAddress').attr('placeholder', document.domain);
-	$('#registerPort').attr('placeholder', window.location.port);
-	$('#registerModal').modal({
-		backdrop: 'static',
-		keyboard: false,
-		show: true 
-	});
-	$('#registerSubmit').click(register);
-	$('#registerName').keyup(function(e){
-		if(e.keyCode == 13){
-			register(); 
-		}
-	});
+$(document).ready(
+	function() {
+		$('#registerAddress').attr('placeholder', document.domain);
+		$('#registerPort').attr('placeholder', window.location.port);
+		$('#registerModal').modal({
+			backdrop: 'static',
+			keyboard: false,
+			show: true 
+		});
+		$('#registerSubmit').click(register);
+		$('#registerName').keyup(function(e){
+			if(e.keyCode == 13){
+				register(); 
+			}
+		});
 
-	// modal switch handler 
-	var statenow = 1;
-	$('#bNewDocument1').click(
-		function(){
-			$('#bNewDocument1').prop( 'checked', true ); 
-			// $('#bNewDocument0').prop( 'checked', false ); 
-			$('#registerFile').prop( 'disabled', false ).focus();
-			$('#joinID').prop( 'disabled', true );
-			statenow = 1; 
-		}
-	);
-	$('#bNewDocument0').click(
-		function(){
-			// $('#bNewDocument1').prop( 'checked', false ); 
-			$('#bNewDocument0').prop( 'checked', true ); 
-			$('#registerFile').prop( 'disabled', true );
-			$('#joinID').prop( 'disabled', false ).focus(); 
-			statenow = 0; 
-		}
-	);
+		// modal switch handler 
+		var statenow = 1;
+		$('#bNewDocument1').click(
+			function(){
+				$('#bNewDocument1').prop( 'checked', true ); 
+				// $('#bNewDocument0').prop( 'checked', false ); 
+				$('#registerFile').prop( 'disabled', false ).focus();
+				$('#joinID').prop( 'disabled', true );
+				statenow = 1; 
+			}
+		);
+		$('#bNewDocument0').click(
+			function(){
+				// $('#bNewDocument1').prop( 'checked', false ); 
+				$('#bNewDocument0').prop( 'checked', true ); 
+				$('#registerFile').prop( 'disabled', true );
+				$('#joinID').prop( 'disabled', false ).focus(); 
+				statenow = 0; 
+			}
+		);
 
-	// initial focus 
-	$('#registerAddress').focus(); 
-});
+		// initial focus 
+		$('#registerAddress').focus(); 
+	}
+); 
+
+
