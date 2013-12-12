@@ -48,9 +48,11 @@ function PBCast(serverLocation){
 				break;
 				
 			case 'USER_CONNECTED':
+				self.emit('connectedUser', obj.data.id);
 				break;
 			
 			case 'USER_DISCONNECTED':
+				self.emit('disconnectedUser', obj.data.id);
 				break;
 				
 			default:
