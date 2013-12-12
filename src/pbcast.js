@@ -198,7 +198,6 @@ function PBCast(){
 	this._peer.on('connection', handleNewConnection);
 
 	function handleOpen(id){
-		console.log('id dans open :' + id);
 		// We join the group of the joinId peer.
 		if(joinId != undefined){
 			var connection = self._peer.connect(joinId);
@@ -224,9 +223,13 @@ function PBCast(){
 					break;
 
 				case PBCast.MSG:
+					console.log('Message reçu');
 					handleMessage(data.data);
 					break;
-
+					
+				case PBCast.JOINED:
+					break;
+				
 				case PBCast.QUIT:
 					handleQuit(connection)();
 					break;
@@ -347,6 +350,7 @@ function PBCast(){
 			checkNoDelivered();
 		}
 		else{
+			console.log('Non prêt causalement: ' + JSON.stringify(message));
 			self._notDelivered.push({msg: message});
 		}
 	}
@@ -397,7 +401,8 @@ PBCast.prototype.constructor = PBCast;
 PBCast.JOIN_REQ = 0;
 PBCast.JOIN_RESP = 1;
 PBCast.MSG = 2;
-PBCast.QUIT = 3;
+PBCast.JOINED = 3;
+PBCast.QUIT = 4;
 
 /**
  * \brief ...
@@ -436,6 +441,7 @@ PBCast.prototype.send = function(message){
 PBCast.prototype._broadcast = function(message){
 	for(var connEntry in this._connections.iterator()){
 		connEntry[1].send(message);
+		console.log('Message envoyé');
 	}
 };
 

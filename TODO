@@ -7,3 +7,7 @@
 + faire tester à plus large échelle
 + refaire le routage dans le projet nodejs
 + modifier seedrandom pour ne plus toucher à l'objet Math
++ gestion du problème des lignes vides (Ace)
++ transfert d'état : 
+	le noeud qu'on join refile le doc + le vector clock
+	on transmet au nouveau noeud toutes les opérations que l'on reçoit jusqu'a ce qu'il soit connecté à tout le monde

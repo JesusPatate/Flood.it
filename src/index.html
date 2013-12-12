@@ -172,13 +172,14 @@
 
 				
 				pbcast = new PBCast({port:serverPort, host:serverAddress}, 10, 3);
-				pbcast.on('ready', function(id){
+				pbcast.on('ready', function(data){
 					$('#registerModal').modal('hide');
 					editor = new Editor("editor");
 					lseq = new LSEQ();
-					console.log('id: ' + id);
+					console.log('id: ' + data.id);
 				
 					pbcast.on('deliver', function(msg){
+						console.log(JSON.stringify(msg));
 						lseq.onDelivery(msg);
 					});
 				
