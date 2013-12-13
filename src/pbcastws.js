@@ -132,17 +132,11 @@ function PBCast(serverLocation){
 	function detectError(qvc){
 		var inferiorToCurrent = qvc.isInferior(self._qvc);
 		var inferiorOrEqualToDelivered = true;
-		var it = self._delivered.iterator();
-		var end = false;	
+		var it = self._delivered.iterator();	
 		
-		while(inferiorToCurrent && inferiorOrEqualToDelivered && !end){
-			try{
-				var deliveredQvc = it.next()[1];
-				inferiorOrEqualToDelivered = qvc.isInferiorOrEqual(deliveredQvc);
-			}
-			catch(e){
-				end = true;
-			}
+		while(inferiorToCurrent && inferiorOrEqualToDelivered && it.hasNext()){
+			var deliveredQvc = it.next()[1];
+			inferiorOrEqualToDelivered = qvc.isInferiorOrEqual(deliveredQvc);
 		}
 		
 		return inferiorToCurrent && inferiorOrEqualToDelivered;

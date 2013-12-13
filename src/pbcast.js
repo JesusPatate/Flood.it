@@ -102,17 +102,11 @@ QVC.prototype.isCausallyReady = function(reference){
  */
 QVC.prototype.isInferior = function(qvc){
 	var inferior = true;
-	var it = Iterator(this._entries, false);
-	var end = false;	
+	var it = new LitteralObjectIterator(this._entries, true);	
 		
-	while(inferior && !end){
-		try{
-			var entry = it.next();
-			inferior = (this._clocks[entry] < qvc._clocks[entry]);
-		}
-		catch(e){
-			end = true;
-		}
+	while(inferior && it.hasNext()){
+		var entry = it.next();
+		inferior = (this._clocks[entry] < qvc._clocks[entry]);
 	}
 	
 	return inferior;
@@ -126,17 +120,11 @@ QVC.prototype.isInferior = function(qvc){
  */
 QVC.prototype.isInferiorOrEqual = function(qvc){
 	var inferior = true;
-	var it = Iterator(this._entries, false);
-	var end = false;	
+	var it = new LitteralObjectIterator(this._entries, true);	
 		
-	while(inferior && !end){
-		try{
-			var entry = it.next();
-			inferior = (this._clocks[entry] <= qvc._clocks[entry]);
-		}
-		catch(e){
-			end = true;
-		}
+	while(inferior && it.hasNext()){
+		var entry = it.next();
+		inferior = (this._clocks[entry] <= qvc._clocks[entry]);
 	}
 	
 	return inferior;
@@ -278,10 +266,13 @@ function PBCast(){
 	
 	function handleInitializationRequest(requestConnection){
 		var knownIds = [];
-					
-		for(var i in self._connections.iterator()){
-			if(i[1] != requestConnection){
-				knownIds.push(i[0]);
+		var it = self._connections.iterator();
+		
+		while(it.hasNext()){
+			var connection = it.next();
+			
+			if(connection[1] != requestConnection){
+				knownIds.push(connection[0]);
 			}
 		}
 					
@@ -379,17 +370,11 @@ function PBCast(){
 	function detectError(qvc){
 		var inferiorToCurrent = qvc.isInferior(self._qvc);
 		var inferiorOrEqualToDelivered = true;
-		var it = self._delivered.iterator();
-		var end = false;	
+		var it = self._delivered.iterator();	
 		
-		while(inferiorToCurrent && inferiorOrEqualToDelivered && !end){
-			try{
-				var deliveredQvc = it.next()[1];
-				inferiorOrEqualToDelivered = qvc.isInferiorOrEqual(deliveredQvc);
-			}
-			catch(e){
-				end = true;
-			}
+		while(inferiorToCurrent && inferiorOrEqualToDelivered && it.hasNext()){
+			var deliveredQvc = it.next()[1];
+			inferiorOrEqualToDelivered = qvc.isInferiorOrEqual(deliveredQvc);
 		}
 		
 		return inferiorToCurrent && inferiorOrEqualToDelivered;
@@ -440,9 +425,10 @@ PBCast.prototype.send = function(message){
  *      ...
  */
 PBCast.prototype._broadcast = function(message){
-	for(var connEntry in this._connections.iterator()){
-		connEntry[1].send(message);
-		console.log('Message envoyé');
+	var it = this._connections.iterator();
+		
+	while(it.hasNext()){
+		it.next()[1].send(message);
 	}
 };
 

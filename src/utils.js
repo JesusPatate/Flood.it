@@ -4,6 +4,68 @@ Dependences :
 
 
 /**
+ * \class ArrayIterator
+ * \brief ...
+ */
+function ArrayIterator(iterable, one){
+	this._iterable = iterable;
+	this._one = one || false;
+	this._index = -1;
+}
+
+ArrayIterator.prototype.next = function(){
+	var value;
+	
+	if(this._one){
+		value = iterable[this._index++];
+	}
+	else{
+		value = [index, iterable[this._index++]];
+	}
+
+	return value;
+};
+
+ArrayIterator.prototype.hasNext = function(){
+	this._index < iterable.length;
+};
+
+
+/**
+ * \class LitteralObjectIterator
+ * \brief ...
+ */
+function LitteralObjectIterator(iterable, one){
+	this._iterable = iterable;
+	this._one = one || false;
+	this._keys = [];
+	
+	for(var key in iterable){
+		this._keys.push(key);
+	}
+	
+	this._index;
+}
+
+LitteralObjectIterator.prototype.next = function(){
+	var value;
+	
+	if(this._one){
+		value = iterable[this._index++];
+	}
+	else{
+		value = [index, iterable[this._index++]];
+	}
+
+	return value;
+};
+
+LitteralObjectIterator.prototype.hasNext = function(){
+	this._index < iterable.length;
+};
+
+
+/**
  * \class Map
  * \brief An object that maps keys to values. A map cannot contain
  *  duplicate keys; each key can map to at most one value.
@@ -86,7 +148,7 @@ Map.prototype.size = function(){
  *  map.
  */
 Map.prototype.iterator = function(){
-	return Iterator(this._elements);
+	return new LitteralObjectIterator(this._elements);
 };
 
 
@@ -138,7 +200,7 @@ Queue.prototype.size = function(){
  * \brief Returns an iterator over the elements (index, value) in this queue.
  */
 Queue.prototype.iterator = function(){
-	return Iterator(this._elements);
+	return new ArrayIterator(this._elements);
 };
 
 
