@@ -15,19 +15,21 @@ function ArrayIterator(iterable, one){
 
 ArrayIterator.prototype.next = function(){
 	var value;
+	var index = ++this._index;
+	
 	
 	if(this._one){
-		value = this._iterable[this._index++];
+		value = this._iterable[index];
 	}
 	else{
-		value = [index, this._iterable[this._index++]];
+		value = [index, this._iterable[index]];
 	}
 
 	return value;
 };
 
 ArrayIterator.prototype.hasNext = function(){
-	this._index < this._iterable.length;
+	return this._index + 1 < this._iterable.length;
 };
 
 
@@ -44,24 +46,26 @@ function LitteralObjectIterator(iterable, one){
 		this._keys.push(key);
 	}
 	
-	this._index;
+	this._index = -1;
 }
 
 LitteralObjectIterator.prototype.next = function(){
 	var value;
+	var index = ++this._index;
+	var key = this._keys[index];
 	
 	if(this._one){
-		value = this._iterable[this._index++];
+		value = this._iterable[key];
 	}
 	else{
-		value = [index, this._iterable[this._index++]];
+		value = [key, this._iterable[key]];
 	}
 
 	return value;
 };
 
 LitteralObjectIterator.prototype.hasNext = function(){
-	this._index < this._iterable.length;
+	return this._index + 1 < this._keys.length;
 };
 
 
