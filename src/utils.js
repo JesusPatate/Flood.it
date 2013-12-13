@@ -17,17 +17,17 @@ ArrayIterator.prototype.next = function(){
 	var value;
 	
 	if(this._one){
-		value = iterable[this._index++];
+		value = this._iterable[this._index++];
 	}
 	else{
-		value = [index, iterable[this._index++]];
+		value = [index, this._iterable[this._index++]];
 	}
 
 	return value;
 };
 
 ArrayIterator.prototype.hasNext = function(){
-	this._index < iterable.length;
+	this._index < this._iterable.length;
 };
 
 
@@ -40,7 +40,7 @@ function LitteralObjectIterator(iterable, one){
 	this._one = one || false;
 	this._keys = [];
 	
-	for(var key in iterable){
+	for(var key in this._iterable){
 		this._keys.push(key);
 	}
 	
@@ -51,17 +51,17 @@ LitteralObjectIterator.prototype.next = function(){
 	var value;
 	
 	if(this._one){
-		value = iterable[this._index++];
+		value = this._iterable[this._index++];
 	}
 	else{
-		value = [index, iterable[this._index++]];
+		value = [index, this._iterable[this._index++]];
 	}
 
 	return value;
 };
 
 LitteralObjectIterator.prototype.hasNext = function(){
-	this._index < iterable.length;
+	this._index < this._iterable.length;
 };
 
 

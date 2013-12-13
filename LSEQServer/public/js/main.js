@@ -25,11 +25,11 @@ function register(){
 	pbcast = new PBCast(serverLocation, {userName: userName});
 	pbcast.on('ready', function(data){
 		$('#registerModal').modal('hide');
-		$('<div class="addon" id="' + data.id + '">' + data.name + '</div>')
+		$('<div class="addon pouet" id="' + data.id + '">' + data.name + '</div>')
 			.hide().appendTo('#collaborators').fadeIn(300);
 
 		for(var i = 0; i < data.knownUsers.length; i++){
-			$('<div class="addon" id="' + data.knownUsers[i].id + '">' + data.knownUsers[i].name + ')</div>')
+			$('<div class="addon" id="' + data.knownUsers[i].id + '">' + data.knownUsers[i].name + '</div>')
 				.hide().appendTo('#collaborators').fadeIn(300); 
 		}
 

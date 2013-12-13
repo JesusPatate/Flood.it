@@ -54,7 +54,7 @@ function sendContext(user){
 }
 
 function sendJoinAttributes(user){
-	var msg = JSON.stringify({type: 'JOIN_RESP', data: {id: user.id, name: user.name, knownIds: getKnownUsers(user.id), r: entriesHashFunction._m, entries: entriesHashFunction.hash(user.id)}});
+	var msg = JSON.stringify({type: 'JOIN_RESP', data: {id: user.id, name: user.name, knownUsers: getKnownUsers(user.id), r: entriesHashFunction._m, entries: entriesHashFunction.hash(user.id)}});
 	user.connection.sendUTF(msg);
 }
 
@@ -176,6 +176,11 @@ function onHttpRequest(req, res){
 		case '/seedrandom.js':
 			res.writeHeader(200, {'Content-Type': 'application/javascript'});  
 			res.end(fs.readFileSync('public/js/seedrandom.js', 'utf8'));  
+			break;
+    
+		case '/index.css':
+			res.writeHeader(200, {'Content-Type': 'text/css'});  
+			res.end(fs.readFileSync('public/css/index.css', 'utf8'));  
 			break;
     
 		case '/index.html':
