@@ -54,22 +54,22 @@ function sendContext(user){
 }
 
 function sendJoinAttributes(user){
-	var msg = JSON.stringify({type: 'JOIN_RESP', data: {id: user.id, knownIds: getKnownIds(user.id), r: entriesHashFunction._m, entries: entriesHashFunction.hash(user.id)}});
+	var msg = JSON.stringify({type: 'JOIN_RESP', data: {id: user.id, name: user.name, knownIds: getKnownUsers(user.id), r: entriesHashFunction._m, entries: entriesHashFunction.hash(user.id)}});
 	user.connection.sendUTF(msg);
 }
 
-function getKnownIds(except){
-	var knownIds = [];
+function getKnownUsers(except){
+	var knownUsers = [];
 	
 	for(var i = 0; i < users.length; i++){
 		var id = users[i].id;
 		
 		if(id != except){
-			knownIds.push(id);
+			knownUsers.push({id: id, name: users[i].name});
 		}
 	}
 	
-	return knownIds;
+	return knownUsers;
 }
 
 function getIdFromConnection(connection){
@@ -214,11 +214,11 @@ function onWsRequest(req){
 
 			switch(obj.type){
 				case 'JOIN_REQ':
-					user = {id: UUID.gen(), connection: connection};
+					user = {id: UUID.gen(), name: obj.data.userName, connection: connection};
 					index = users.push(user) - 1;
 					sendJoinAttributes(user);
 					sendContext(user);
-					sendMessage({type: 'USER_CONNECTED', data: {id: user.id}}, connection);
+					sendMessage({type: 'USER_CONNECTED', data: {id: user.id, name: user.name}}, connection);
 					break;
 					
 				case 'MSG':

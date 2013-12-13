@@ -22,14 +22,14 @@ function register(){
 		$('#registerName').val() : 'NoName';
 
 	var serverLocation = 'ws://' + serverAddress + ':' + serverPort;
-	pbcast = new PBCast(serverLocation);
+	pbcast = new PBCast(serverLocation, {userName: userName});
 	pbcast.on('ready', function(data){
 		$('#registerModal').modal('hide');
-		$('<div class="addon" id="' + data.id + '">' + userName + ' (' + data.id + ')</div>')
+		$('<div class="addon" id="' + data.id + '">' + data.name + '</div>')
 			.hide().appendTo('#collaborators').fadeIn(300);
 
-		for(var i = 0; i < data.knownIds.length; i++){
-			$('<div class="addon" id="' + data.knownIds[i] + '">' + "" + '(' + data.knownIds[i] + ')</div>')
+		for(var i = 0; i < data.knownUsers.length; i++){
+			$('<div class="addon" id="' + data.knownUsers[i].id + '">' + data.knownUsers[i].name + ')</div>')
 				.hide().appendTo('#collaborators').fadeIn(300); 
 		}
 
@@ -56,17 +56,16 @@ function register(){
 			editor.insert(msg.value, msg.offset);
 		});
 
-		pbcast.on('connectedUser', function(newuserid){
-			if($('#' + newuserid ).length < 1){
-				$('<div class="addon" id="' + newuserid + '">' + "" + '(' + newuserid + ')</div>'
+		pbcast.on('connectedUser', function(newUser){
+			if($('#' + newUser.id).length < 1){
+				$('<div class="addon" id="' + newUser.id + '">' + newUser.name + '</div>'
 					).hide().appendTo('#collaborators').fadeIn(300); 
 			}
 		});
 
-		pbcast.on('disconnectedUser', function(olduserid){
-			if($('#' + olduserid ).length > 0){
-				// remove from the list 
-				$('#' + olduserid ).fadeOut(300, function(){ 
+		pbcast.on('disconnectedUser', function(oldUser){
+			if($('#' + oldUser.id).length > 0){
+				$('#' + oldUser.id).fadeOut(300, function(){ 
 					$(this).remove(); 
 				}); 
 			}
@@ -93,14 +92,12 @@ $(document).ready(function(){
 	var statenow = 1;
 	$('#bNewDocument1').click(function(){
 		$('#bNewDocument1').prop('checked', true); 
-		// $('#bNewDocument0').prop( 'checked', false ); 
 		$('#registerFile').prop('disabled', false).focus();
 		$('#joinID').prop('disabled', true);
 		statenow = 1; 
 	});
 	
 	$('#bNewDocument0').click(function(){
-		// $('#bNewDocument1').prop( 'checked', false ); 
 		$('#bNewDocument0').prop('checked', true); 
 		$('#registerFile').prop('disabled', true);
 		$('#joinID').prop('disabled', false).focus(); 

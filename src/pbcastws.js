@@ -9,7 +9,7 @@ Dependences :
  * \class PBCast
  * \brief ...
  */
-function PBCast(serverLocation){
+function PBCast(serverLocation, initializationData){
 	var self = this;
 	EventEmitter.call(this);
 	this._websocket = new WebSocket(serverLocation);
@@ -23,7 +23,7 @@ function PBCast(serverLocation){
     
     this._websocket.onopen = function(evt){
 		console.log("CONNECTED TO " + serverLocation);
-		self._websocket.send(JSON.stringify({type: 'JOIN_REQ'}));
+		self._websocket.send(JSON.stringify({type: 'JOIN_REQ', data: initializationData}));
 	};
 	
 	this._websocket.onclose = function(event){
@@ -48,11 +48,11 @@ function PBCast(serverLocation){
 				break;
 				
 			case 'USER_CONNECTED':
-				self.emit('connectedUser', obj.data.id);
+				self.emit('connectedUser', obj.data);
 				break;
 			
 			case 'USER_DISCONNECTED':
-				self.emit('disconnectedUser', obj.data.id);
+				self.emit('disconnectedUser', obj.data);
 				break;
 				
 			default:
