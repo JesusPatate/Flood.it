@@ -9,6 +9,7 @@ var fs = require('fs');
 var document = require('./document');
 
 var documents = {};
+var connections = [];
 
 /*!
  * \brief Http Request listener.
@@ -110,15 +111,35 @@ function handleWebSocketRequest(request){
 		if(message.type == 'utf8'){
 			var obj = JSON.parse(message.utf8Data);
 			var document;
+			var documentTitle;
 
 			switch(obj.type){
 				case 'JOIN_REQ':
-					document = documents[DEFAULT_DOCUMENT];
-					document.addUser(obj.data, connection);
+					documentTitle = obj.data.documentTitle;
+					
+					if(obj.data.isNewDocument){
+						
+						document = new document.Document(R, K);
+						documents[documentTitle] = document;
+					}
+					else{
+						if(documentTitle in documents){
+							document = documents[documentTitle];
+						}
+						else{
+							documentTitle = DEFAULT_DOCUMENT;
+							document = documents[DEFAULT_DOCUMENT];
+						}
+					}
+					
+					connections.push({connection: connection, documentTitle: documentTitle});
+					document.addUser({userName: obj.data.userName}, connection);
 					break;
 					
 				case 'MSG':
-					document = documents[DEFAULT_DOCUMENT];
+					var connectionIndex = getConnectionIndexFromConnection(connection);
+					documentTitle = connections[connectionIndex].documentTitle;
+					document = documents[documentTitle];
 					document.receive(obj.data, connection);
 					break;
 					
@@ -128,10 +149,26 @@ function handleWebSocketRequest(request){
 	});
 
 	connection.on('close', function(msg){
-		var document = documents[DEFAULT_DOCUMENT];
+		var connectionIndex = getConnectionIndexFromConnection(connection);
+		var documentTitle = connections[connectionIndex].documentTitle;
+		var document = documents[documentTitle];
 		document.removeUser(connection);
+		connections.splice(connectionIndex, 1);
 	});
 }
+
+function getConnectionIndexFromConnection(connection){
+	var i = 0;
+	var found = false;
+                
+    while(i < connections.length && !found){
+		found = (connections[i].connection == connection);
+		i++;
+	}
+    
+	return i - 1;
+};
+	
 
 documents[DEFAULT_DOCUMENT] = new document.Document(R, K);
 var server = http.createServer(handleHttpRequest).listen(PORT);

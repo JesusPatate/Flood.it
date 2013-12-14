@@ -20,9 +20,12 @@ function register(){
 	var serverPort = window.location.port;
 	var userName = ($('#registerName').val().length > 0) ? 
 		$('#registerName').val() : 'NoName';
+	var documentTitle = ($('#documentTitle').val().length > 0) ? 
+		$('#documentTitle').val() : 'untitled';
+	var isNewDocument = $('#newDocument').attr('checked') == 'checked';
 
 	var serverLocation = 'ws://' + serverAddress + ':' + serverPort;
-	pbcast = new PBCast(serverLocation, {userName: userName});
+	pbcast = new PBCast(serverLocation, {userName: userName, isNewDocument: isNewDocument, documentTitle: documentTitle});
 	pbcast.on('ready', function(data){
 		$('#registerModal').modal('hide');
 		$('<div class="addon pouet" id="' + data.id + '">' + data.name + '</div>')
@@ -74,8 +77,6 @@ function register(){
 }
 
 $(document).ready(function(){
-	$('#registerAddress').attr('placeholder', document.domain);
-	$('#registerPort').attr('placeholder', window.location.port);
 	$('#registerModal').modal({
 		backdrop: 'static',
 		keyboard: false,
@@ -86,22 +87,6 @@ $(document).ready(function(){
 		if(e.keyCode == 13){
 			register(); 
 		}
-	});
-
-	// modal switch handler 
-	var statenow = 1;
-	$('#bNewDocument1').click(function(){
-		$('#bNewDocument1').prop('checked', true); 
-		$('#registerFile').prop('disabled', false).focus();
-		$('#joinID').prop('disabled', true);
-		statenow = 1; 
-	});
-	
-	$('#bNewDocument0').click(function(){
-		$('#bNewDocument0').prop('checked', true); 
-		$('#registerFile').prop('disabled', true);
-		$('#joinID').prop('disabled', false).focus(); 
-		statenow = 0; 
 	});
 
 	// initial focus 

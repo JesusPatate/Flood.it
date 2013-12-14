@@ -3,7 +3,6 @@
 	<head>
 		<meta charset="utf-8"/>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<!-- <title>Logoot Full JS Implementation</title> -->
 		<title>Flood.it</title>
 		<link rel="stylesheet" type="text/css" href="bootstrap.min.css" />
 		<link type="text/css" href="index.css" rel="stylesheet" />
@@ -26,17 +25,47 @@
 		<!-- Register Modal -->
 		<div class="modal fade" id="registerModal">
 			<div class="modal-header">
-				<h3>Register</h3>
+				<h1>Flood.it</h1>
 			</div>
 			<div class="modal-body">
-				<label>
-				To start, register your name:
-				</label>
-			<div class="form-inline">
 				
-				<input type="text" id="registerName" class="span2" placeholder="Name">
+				<h3>
+					To start, register your name and choose a document.
+				</h3>
+				<div class="form-inline">
+					<div class="modal-connect">
+						<div class="input-prepend input-append">
+							<div>
+								<label for="registerName">
+									<span class="add-on">Nickname</span>
+									<input type="text" id="registerName" class="span2" placeholder="Name">
+								</label>
+							</div>
+							
+							<div class="input-prepend input-append fullWidth">
+								<label for="newDocument" class="radio fleft">
+									<input type="radio" name="documentType" class="radio1" id="newDocument" value="1" checked="checked" />
+									Create new document.
+								</label>
+							</div>
+							
+							<div class="input-prepend input-append fullWidth">
+								<label for="existingDocument" class="radio fleft">
+									<input type="radio" name="documentType" class="radio1" id="existingDocument" value="0" />
+									Join existing document.
+								</label>
+							</div>
+							
+							<div>
+								<label for="documentTitle" class="fright">
+									<span class="add-on">Document title</span>
+									<input type="text" id="documentTitle" class="span4" placeholder="untitled" />
+								</label>
+							</div>
+						</div>
+					</div>
+				</div>
 			</div>
-		</div>
 			<div class="modal-footer">
 				<button class="btn btn-primary" id="registerSubmit"
 				data-loading-text="Register ...">Register</button>
