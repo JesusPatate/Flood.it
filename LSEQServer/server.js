@@ -1,116 +1,14 @@
 var PORT = 1337;
 var R = 100;
 var K = 5;
+var DEFAULT_DOCUMENT = 'untitled';
 var WebSocketServer = require('websocket').server;
 var http = require('http');
 var url = require('url');
 var fs = require('fs');
-var entriesHash = require('./entrieshash');
+var document = require('./document');
 
-/*!
- * \brief Currently connected users.
- *
- * Each user has the following form:
- \verbatim
-  {
-    id          : <USER UNIQUE ID>,
-    name        : <USER NAME>,
-    connection  : <WEBSOCKET CONNECTION OBJECT>
-  }
- \endverbatim
- */
-var users = [];
-
-//! Context is all transmited patchs from server start.
-var messages = [];
-
-var hashGenerator = new entriesHash.EntriesHashGenerator();
-var entriesHashFunction = hashGenerator.generate(R, K);
-
-//! Unique identifier of user.
-function UUID(){}
-UUID.millisOld = 0;
-UUID.counter = 0;
-UUID.gen = function(){
-	var millis = new Date().getTime() - 1262304000000;
-
-	if(millis == UUID.millisOld){
-		++ UUID.counter;
-	}
-	else{
-		UUID.counter = 0;
-		UUID.millisOld = millis;
-	}
-
-	return (millis * Math.pow(2, 12)) + UUID.counter;
-}
-
-function sendContext(user){
-	// Send existing messages.
-	for(var i = 0; i < messages.length; i++){
-		var msg = JSON.stringify({type: 'MSG', data: messages[i]});
-		user.connection.sendUTF(msg);
-	}
-}
-
-function sendJoinAttributes(user){
-	var msg = JSON.stringify({type: 'JOIN_RESP', data: {id: user.id, name: user.name, knownUsers: getKnownUsers(user.id), r: entriesHashFunction._m, entries: entriesHashFunction.hash(user.id)}});
-	user.connection.sendUTF(msg);
-}
-
-function getKnownUsers(except){
-	var knownUsers = [];
-	
-	for(var i = 0; i < users.length; i++){
-		var id = users[i].id;
-		
-		if(id != except){
-			knownUsers.push({id: id, name: users[i].name});
-		}
-	}
-	
-	return knownUsers;
-}
-
-function getIdFromConnection(connection){
-	var id;
-	var i = 0;
-		
-	while(i < users.length && id == undefined){
-		if(users[i].connection == connection){
-			id = users[i].id;
-		}
-			
-		i++;
-	}
-	
-	return id;
-}	
-
-/*!
- * \brief Send new message to all connections.
- *
- * Send via websocket a new patch to all connections. The message is formated in
- * json with the following form:
- \verbatim
- {
-    type  : 'MSG',
-    data : <PATCH OBJECT>
- }
- \endverbatim
- *
- * \param message   The message to send to all user.
- * \param except  The connection to not send.
- */
-function sendMessage(message, except){
-	var msg = JSON.stringify(message);
-
-	for(var i = 0; i < users.length; i++){ 
-		if(users[i].connection != except){
-			users[i].connection.sendUTF(msg);
-		}
-	}
-}
+var documents = {};
 
 /*!
  * \brief Http Request listener.
@@ -118,77 +16,75 @@ function sendMessage(message, except){
  * \param req   The user request.
  * \param res   The response send to user.
  */
-function onHttpRequest(req, res){
-	var route = url.parse(req.url).pathname
+function handleHttpRequest(request, response){
+	var route = url.parse(request.url).pathname
 
-	// Ugly url routing ...
 	switch(route){
 		case '/bootstrap.min.css':
-			res.writeHeader(200, {'Content-Type': 'text/css'});  
-			res.end(fs.readFileSync('public/css/bootstrap.min.css', 'utf8'));  
+			response.writeHeader(200, {'Content-Type': 'text/css'});  
+			response.end(fs.readFileSync('public/css/bootstrap.min.css', 'utf8'));  
 			break;
 		
 		case '/bootstrap.min.js':
-			res.writeHeader(200, {'Content-Type': 'application/javascript'});  
-			res.end(fs.readFileSync('public/js/bootstrap.min.js', 'utf8'));  
+			response.writeHeader(200, {'Content-Type': 'application/javascript'});  
+			response.end(fs.readFileSync('public/js/bootstrap.min.js', 'utf8'));  
 			break;
     
 		case '/lseq.js':
-			res.writeHeader(200, {'Content-Type': 'application/javascript'});  
-			res.end(fs.readFileSync('public/js/lseq.js', 'utf8'));  
+			response.writeHeader(200, {'Content-Type': 'application/javascript'});  
+			response.end(fs.readFileSync('public/js/lseq.js', 'utf8'));  
 			break;
 			
 		case '/pbcastws.js':
-			res.writeHeader(200, {'Content-Type': 'application/javascript'});  
-			res.end(fs.readFileSync('public/js/pbcastws.js', 'utf8'));  
+			response.writeHeader(200, {'Content-Type': 'application/javascript'});  
+			response.end(fs.readFileSync('public/js/pbcastws.js', 'utf8'));  
 			break;
 		
 		case '/pbcast.js':
-			res.writeHeader(200, {'Content-Type': 'application/javascript'});  
-			res.end(fs.readFileSync('public/js/pbcast.js', 'utf8'));  
+			response.writeHeader(200, {'Content-Type': 'application/javascript'});  
+			response.end(fs.readFileSync('public/js/pbcast.js', 'utf8'));  
 			break;
 		
 		case '/main.js':
-			res.writeHeader(200, {'Content-Type': 'application/javascript'});  
-			res.end(fs.readFileSync('public/js/main.js', 'utf8'));  
+			response.writeHeader(200, {'Content-Type': 'application/javascript'});  
+			response.end(fs.readFileSync('public/js/main.js', 'utf8'));  
 			break;
     
 		case '/editor.js':
-			res.writeHeader(200, {'Content-Type': 'application/javascript'});  
-			res.end(fs.readFileSync('public/js/editor.js', 'utf8'));  
+			response.writeHeader(200, {'Content-Type': 'application/javascript'});  
+			response.end(fs.readFileSync('public/js/editor.js', 'utf8'));  
 			break;
 		
 		case '/ace.js':
-			res.writeHeader(200, {'Content-Type': 'application/javascript'});  
-			res.end(fs.readFileSync('public/js/ace.js', 'utf8'));  
+			response.writeHeader(200, {'Content-Type': 'application/javascript'});  
+			response.end(fs.readFileSync('public/js/ace.js', 'utf8'));  
 			break;
 			
 		case '/utils.js':
-			res.writeHeader(200, {'Content-Type': 'application/javascript'});  
-			res.end(fs.readFileSync('public/js/utils.js', 'utf8'));  
+			response.writeHeader(200, {'Content-Type': 'application/javascript'});  
+			response.end(fs.readFileSync('public/js/utils.js', 'utf8'));  
 			break;
 		
 		case '/eventemitter.js':
-			res.writeHeader(200, {'Content-Type': 'application/javascript'});  
-			res.end(fs.readFileSync('public/js/eventemitter.js', 'utf8'));  
+			response.writeHeader(200, {'Content-Type': 'application/javascript'});  
+			response.end(fs.readFileSync('public/js/eventemitter.js', 'utf8'));  
 			break;
 			
 		case '/seedrandom.js':
-			res.writeHeader(200, {'Content-Type': 'application/javascript'});  
-			res.end(fs.readFileSync('public/js/seedrandom.js', 'utf8'));  
+			response.writeHeader(200, {'Content-Type': 'application/javascript'});  
+			response.end(fs.readFileSync('public/js/seedrandom.js', 'utf8'));  
 			break;
     
 		case '/index.css':
-			res.writeHeader(200, {'Content-Type': 'text/css'});  
-			res.end(fs.readFileSync('public/css/index.css', 'utf8'));  
+			response.writeHeader(200, {'Content-Type': 'text/css'});  
+			response.end(fs.readFileSync('public/css/index.css', 'utf8'));  
 			break;
     
 		case '/index.html':
 		case '/':
 		default:
-			res.writeHeader(200, {'Content-Type': 'text/html'});  
-			res.end(fs.readFileSync('./index.html', 'utf8'));  
-			break;
+			response.writeHeader(200, {'Content-Type': 'text/html'});  
+			response.end(fs.readFileSync('./index.html', 'utf8'));
 	}
 }
 
@@ -207,28 +103,23 @@ function onHttpRequest(req, res){
  *
  * \param req   The user request.
  */
-function onWsRequest(req){
-	var connection = req.accept(null, req.origin);
-	var user;
-	var index = false;
-
-	// Each user send a message event, message is broadcasted to all users.
+function handleWebSocketRequest(request){
+	var connection = request.accept(null, request.origin);	
+	
 	connection.on('message', function(message){
 		if(message.type == 'utf8'){
 			var obj = JSON.parse(message.utf8Data);
+			var document;
 
 			switch(obj.type){
 				case 'JOIN_REQ':
-					user = {id: UUID.gen(), name: obj.data.userName, connection: connection};
-					index = users.push(user) - 1;
-					sendJoinAttributes(user);
-					sendContext(user);
-					sendMessage({type: 'USER_CONNECTED', data: {id: user.id, name: user.name}}, connection);
+					document = documents[DEFAULT_DOCUMENT];
+					document.addUser(obj.data, connection);
 					break;
 					
 				case 'MSG':
-					sendMessage(obj, connection);
-					messages.push(obj.data);
+					document = documents[DEFAULT_DOCUMENT];
+					document.receive(obj.data, connection);
 					break;
 					
 				default:
@@ -236,23 +127,14 @@ function onWsRequest(req){
 		}
 	});
 
-	// At user disconection, he is remove from broadcast groupe.
 	connection.on('close', function(msg){
-		var id = getIdFromConnection(connection);
-		
-		if(index !== false){
-			users.splice(index, 1); 
-		}		
-		
-		sendMessage({type: 'USER_DISCONNECTED', data: {id: id}}, connection);
+		var document = documents[DEFAULT_DOCUMENT];
+		documents.removeUser(connection);
 	});
 }
 
-//! Http Server.
-var server = http.createServer(onHttpRequest).listen(PORT);
-
-//! WebSocket Server.
+documents[DEFAULT_DOCUMENT] = new document.Document(R, K);
+var server = http.createServer(handleHttpRequest).listen(PORT);
 var wsServer = new WebSocketServer({httpServer: server})
-	.on('request', onWsRequest);
-
+	.on('request', handleWebSocketRequest);
 console.log('Server running at http://127.0.0.1:' + PORT);
