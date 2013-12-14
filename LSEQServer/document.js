@@ -21,41 +21,13 @@ Document.prototype.addUser = function(message, connection){
 		name: user.name}}, connection);
 };
 
-Document.prototype.removeUser = function(connection){
-	var index = getUserIndexFromConnection(connection);
-	var user = this._users[index];
-	this._users.splice(index, 1);
-	this._broadcast({type: 'USER_DISCONNECTED', data: {id: user.id}},
-		connection);
-};
-
-Document.prototype.getUserIndexFromConnection = function(connection){
-	var i = 0;
-	var found = false;
-                
-    while(i < this._users.length && !found){
-		var user = this._users[i];
-		found = connection == user.connection;
-		i++;
-	}	
-        
-	return i;
-};     
-
-Document.prototype._sendContext = function(connection){
-	for(var i = 0; i < this._messages.length; i++){
-		var msg = JSON.stringify({type: 'MSG', data: this._messages[i]});
-		connection.sendUTF(msg);
-	}
-};
-
 Document.prototype._sendInitializationAttributes = function(user){
 	var msg = JSON.stringify({type: 'JOIN_RESP', data: {id: user.id,
 		name: user.name, knownUsers: this._getKnownUsers(),
 		r: this._entriesHashFunction._m,
 		entries: this._entriesHashFunction.hash(user.id)}});
 	user.connection.sendUTF(msg);
-}
+};
 
 Document.prototype._getKnownUsers = function(){
 	var knownUsers = [];
@@ -66,7 +38,14 @@ Document.prototype._getKnownUsers = function(){
 	}
 	
 	return knownUsers;
-}	
+};	
+
+Document.prototype._sendContext = function(connection){
+	for(var i = 0; i < this._messages.length; i++){
+		var msg = JSON.stringify({type: 'MSG', data: this._messages[i]});
+		connection.sendUTF(msg);
+	}
+};
 
 Document.prototype._broadcast = function(message, except){
 	var msg = JSON.stringify(message);
@@ -78,7 +57,28 @@ Document.prototype._broadcast = function(message, except){
 			user.connection.sendUTF(msg);
 		}
 	}
-}
+};
+
+Document.prototype.removeUser = function(connection){
+	var index = this._getUserIndexFromConnection(connection);
+	var user = this._users[index];
+	this._users.splice(index, 1);
+	this._broadcast({type: 'USER_DISCONNECTED', data: {id: user.id}},
+		connection);
+};
+
+Document.prototype._getUserIndexFromConnection = function(connection){
+	var i = 0;
+	var found = false;
+                
+    while(i < this._users.length && !found){
+		var user = this._users[i];
+		found = (connection == user.connection);
+		i++;
+	}
+    
+	return i - 1;
+};     
 
 function UUID(){
 }

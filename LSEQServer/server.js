@@ -129,7 +129,7 @@ function handleWebSocketRequest(request){
 
 	connection.on('close', function(msg){
 		var document = documents[DEFAULT_DOCUMENT];
-		documents.removeUser(connection);
+		document.removeUser(connection);
 	});
 }
 
