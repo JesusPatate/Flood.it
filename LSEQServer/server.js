@@ -6,7 +6,7 @@ var WebSocketServer = require('websocket').server;
 var http = require('http');
 var url = require('url');
 var fs = require('fs');
-var document = require('./document');
+var Document = require('./document').Document;
 
 var documents = {};
 var connections = [];
@@ -119,7 +119,7 @@ function handleWebSocketRequest(request){
 					
 					if(obj.data.isNewDocument){
 						
-						document = new document.Document(R, K);
+						document = new Document(R, K);
 						documents[documentTitle] = document;
 					}
 					else{
@@ -170,7 +170,7 @@ function getConnectionIndexFromConnection(connection){
 };
 	
 
-documents[DEFAULT_DOCUMENT] = new document.Document(R, K);
+documents[DEFAULT_DOCUMENT] = new Document(R, K);
 var server = http.createServer(handleHttpRequest).listen(PORT);
 var wsServer = new WebSocketServer({httpServer: server})
 	.on('request', handleWebSocketRequest);
