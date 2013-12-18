@@ -158,6 +158,10 @@ function handleWebSocketRequest(request){
 		var document = documents[documentTitle];
 		document.removeUser(connection);
 		connections.splice(connectionIndex, 1);
+		
+		if(document.nbUsers() == 0){
+			delete documents[documentTitle];
+		}
 	});
 }
 

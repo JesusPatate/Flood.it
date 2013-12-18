@@ -81,7 +81,7 @@ Document.prototype._getUserIndexFromConnection = function(connection){
 	return i - 1;
 };
 
-Document.prototype.nbUserser = function(){
+Document.prototype.nbUsers = function(){
 	return this._users.length;
 };
 

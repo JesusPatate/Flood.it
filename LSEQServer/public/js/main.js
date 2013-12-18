@@ -20,8 +20,8 @@ function register(){
 	var serverPort = window.location.port;
 	var userName = ($('#registerName').val().length > 0) ? 
 		$('#registerName').val() : 'NoName';
-	var documentTitle = ($('#documentTitle').val().length > 0) ? 
-		$('#documentTitle').val() : 'untitled';
+	var documentTitle = ($('#documentTitleAsked').val().length > 0) ? 
+		$('#documentTitleAsked').val() : 'untitled';
 	var isNewDocument = $('#newDocument').attr('checked') == 'checked';
 
 	var serverLocation = 'ws://' + serverAddress + ':' + serverPort;
@@ -35,6 +35,8 @@ function register(){
 			$('<div class="addon" id="' + data.knownUsers[i].id + '">' + data.knownUsers[i].name + '</div>')
 				.hide().appendTo('#collaborators').fadeIn(300); 
 		}
+		
+		$('#documentTitle').text(data.documentTitle);
 
 		editor = new Editor("editor");
 		lseq = new LSEQ();
