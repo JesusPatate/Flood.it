@@ -1,6 +1,7 @@
 var entriesHash = require('./entrieshash');
 
-function Document(r, k){
+function Document(title, r, k){
+	this._title = title;
 	this._users = [];
 	this._messages = [];
 	var hashGenerator = new entriesHash.EntriesHashGenerator();
@@ -25,7 +26,7 @@ Document.prototype._sendInitializationAttributes = function(user){
 	var msg = JSON.stringify({type: 'JOIN_RESP', data: {id: user.id,
 		name: user.name, knownUsers: this._getKnownUsers(),
 		r: this._entriesHashFunction._m,
-		entries: this._entriesHashFunction.hash(user.id)}});
+		entries: this._entriesHashFunction.hash(user.id), documentTitle: this._title}});
 	user.connection.sendUTF(msg);
 };
 
@@ -78,7 +79,11 @@ Document.prototype._getUserIndexFromConnection = function(connection){
 	}
     
 	return i - 1;
-};     
+};
+
+Document.prototype.nbUserser = function(){
+	return this._users.length;
+};
 
 function UUID(){
 }

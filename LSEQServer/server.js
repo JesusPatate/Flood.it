@@ -1,12 +1,12 @@
 var PORT = 1337;
 var R = 100;
 var K = 5;
-var DEFAULT_DOCUMENT = 'untitled';
+var DEFAULT_DOCUMENT_TITLE = 'default';
 var WebSocketServer = require('websocket').server;
 var http = require('http');
 var url = require('url');
 var fs = require('fs');
-var document = require('./document');
+var Document = require('./document').Document;
 
 var documents = {};
 var connections = [];
@@ -118,17 +118,21 @@ function handleWebSocketRequest(request){
 					documentTitle = obj.data.documentTitle;
 					
 					if(obj.data.isNewDocument){
-						
-						document = new document.Document(R, K);
-						documents[documentTitle] = document;
+						if(documentTitle in documents){
+							document = documents[documentTitle];
+						}
+						else{
+							document = new Document(documentTitle, R, K);
+							documents[documentTitle] = document;
+						}
 					}
 					else{
 						if(documentTitle in documents){
 							document = documents[documentTitle];
 						}
 						else{
-							documentTitle = DEFAULT_DOCUMENT;
-							document = documents[DEFAULT_DOCUMENT];
+							documentTitle = DEFAULT_DOCUMENT_TITLE;
+							document = documents[DEFAULT_DOCUMENT_TITLE];
 						}
 					}
 					
@@ -170,7 +174,7 @@ function getConnectionIndexFromConnection(connection){
 };
 	
 
-documents[DEFAULT_DOCUMENT] = new document.Document(R, K);
+documents[DEFAULT_DOCUMENT_TITLE] = new Document(DEFAULT_DOCUMENT_TITLE, R, K);
 var server = http.createServer(handleHttpRequest).listen(PORT);
 var wsServer = new WebSocketServer({httpServer: server})
 	.on('request', handleWebSocketRequest);
