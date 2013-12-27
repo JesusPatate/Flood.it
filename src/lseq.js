@@ -1,4 +1,4 @@
-/****************************************
+/*!**************************************
  * Dependancies : seedrandom.js
  ***************************************/
 
@@ -22,66 +22,72 @@ function Triplet(a, b, c) {
 }
 
 /*!
- * \class Position
+ * \class Element
  * \extends Triplet
  * 
  * \param value An integer.
  * \param siteID A site identifier.
- * \param clockEntries Entries in clock
+ * \param clockEntries Site clock entries
  */
-function Position(value, siteID, clockEntries) {
+function Element(value, siteID, clockEntries) {
   Triplet.call(this, value, siteID, clockEntries);
 }
 
-Position.prototype = new Triplet;
-Position.prototype.constructor = Position;
+Element.prototype = new Triplet;
+Element.prototype.constructor = Element;
 
 /*!
- * \brief  Returns position's value (1rst element).
+ * \brief  Returns element's value (1rst element).
  * 
  * \return An integer in range of <tt>[0..LevelBase[</tt>.
  */
-Position.prototype.getValue = function() {
+Element.prototype.getValue = function() {
   return this.first;
 }
 
 /*!
- * \brief Returns position's site ID (2nd element).
+ * \brief Returns element's site ID (2nd element).
  * 
  * \return A site identifier.
  */
-Position.prototype.getSiteID = function() {
+Element.prototype.getSiteID = function() {
   return this.second;
 }
 
 /*!
- * \brief Returns position's clock entries (3rd element).
+ * \brief Returns element's clock entries (3rd element).
  * 
  * \return The clock entries.
  */
-Position.prototype.getClockEntries = function() {
+Element.prototype.getClockEntries = function() {
   return this.third;
 }
 
-/**
- * brief Compares a position to another.
+/*!
+ * brief Tests whether an element is equal to another.
  *
- * \param pos Another position.
- **/
-Position.prototype.compareTo = function(pos) {
+ * \param elt Another element.
+ */
+Element.prototype.equals = function(elt) {
     var res = -1;
 
-    if (this.siteID > pos.getSiteID()) {
+    if (this.siteID > elt.getSiteID()) {
         res = 1;
     }
-    else if (this.siteID == pos.getSiteID()) {
+    else if (this.siteID == elt.getSiteID()) {
 		res = 1;
 	}
 
     return res;
 }
 
-function compareClockEntries(entries1, entries2) {
+/*!
+ * \brief Tests whether 2 set of clock entries are equal.
+ *
+ * \param entries1 A set of clock entries.
+ * \param entries2 Another set of clock entries.
+ */
+function areEqual(entries1, entries2) {
     res = true;
     
     for(var i in entries1) {
@@ -93,17 +99,22 @@ function compareClockEntries(entries1, entries2) {
     return res;
 }
 
-/**
+/*!
  * \class LSEQNode
- * \brief A Node of an exponential tree.
+ * \brief A Node of an LSEQ (exponential) tree.
  */
 function LSEQNode(){
-    this.positions = [];
+    this.elements = [];
     this.size = 0;
     this.children = [];
 }
 
-LSEQNode.prototype.ChildNumber = function(fragment, siteID, clock) {
+/*!
+ * \brief Returns the offset of a child node.
+ *
+ * \param lastLevelID
+ */
+LSEQNode.prototype.ChildNumber = function(lastLevelID, siteID, clock) {
 	var num = 0;
 	var found = false;
 	var i = 0;
@@ -113,11 +124,11 @@ LSEQNode.prototype.ChildNumber = function(fragment, siteID, clock) {
 		if (this.children[i] != undefined && this.children[i] != null
 				&& this.children[i].isEmpty() == false) {
 			
-			if (i == fragment) {
+			if (i == lastLevelID) {
 				found = true;
 			}
 			else {
-				num += this.children[i].positions.length;
+				num += this.children[i].elements.length;
 				num += this.children[i].size;
 			}
 		}
@@ -127,20 +138,20 @@ LSEQNode.prototype.ChildNumber = function(fragment, siteID, clock) {
 		}
 	}
 
-    // Find position
+    // Find element
     if (found) {
-        var positions = this.children[i].positions;
+        var elements = this.children[i].elements;
         
         found = false;
         i = 0;
 
-        while (!found && i < positions.length) {
-			if(positions[i].getSiteID() == siteID
-				&& compareClockEntries(positions[i].getClockEntries(), clock)) {
+        while (!found && i < elements.length) {
+			if(elements[i].getSiteID() == siteID
+				&& areEqual(elements[i].getClockEntries(), clock)) {
 
 				found = true;
 			}
-			else if (positions[i] != undefined) {
+			else if (elements[i] != undefined) {
                 ++num;
             }
 
@@ -151,21 +162,21 @@ LSEQNode.prototype.ChildNumber = function(fragment, siteID, clock) {
 	return found ? num : undefined;
 }
 
-/**
- * Returns wether the node has neither children nor position
+/*!
+ * Returns whether the node has neither children nor element
  */
 LSEQNode.prototype.isEmpty = function() {
-	return ((this.children.length == 0) && (this.positions.length == 0));
+	return ((this.children.length == 0) && (this.elements.length == 0));
 }
 
-/**
+/*!
  * \brief Returns a textual representation of the node.
  */
 LSEQNode.prototype.toString = function(){
     var repr = '';
 
-    for(var i=0; i<this.positions.length; i++){
-        var pos = this.positions[i];
+    for(var i=0; i<this.elements.length; i++){
+        var pos = this.elements[i];
 
         if(pos != undefined){
             repr += pos.getValue();
@@ -183,7 +194,7 @@ LSEQNode.prototype.toString = function(){
     return repr;
 };
 
-/**
+/*!
  * \class LSEQTree
  * \brief Exponential tree for LSEQ
  */
@@ -212,18 +223,23 @@ function LSEQTree(base, boundary){
     this._root.children[this._base - 1] = new LSEQNode(null);
 }
 
-/**
- * \brief Inserts a new element in the tree and return the id attributed
- *  for the new element.
+/*!
+ * \brief Inserts a new element in the tree.
  *
- * \param prevId
- *      ID of the element just before the new one.
  * \param value
  *      Value of the new element.
+ * \param siteID
+ *      Site ID of the new element.
+ * \param clockEntries
+ *      Clock entries of the new element.
+ * \param prevId
+ *      ID of the node just before.
  * \param nextId
- *      ID of the element just after the new one.
+ *      ID of the node just after.
+ *
+ * \return ID attributed to the new element.
  */
-LSEQTree.prototype.insert = function(value, siteID, clock, prevId, nextId){
+LSEQTree.prototype.insert = function(value, siteID, clockEntries, prevId, nextId){
     var depth = 0;
     var lowerBound = prevId[depth];
     var upperBound = nextId[depth];
@@ -284,18 +300,24 @@ LSEQTree.prototype.insert = function(value, siteID, clock, prevId, nextId){
     var lastDepthId = this._strategies[strategyId](step, lowerBound, upperBound);
     var newId = parentId.concat(lastDepthId);
     
-    this.insertWithId(newId, value, siteID, clock);    
+    this.insertWithId(newId, value, siteID, clockEntries);    
     
     return newId;
 };
 
-/**
- * \brief Delete the element corresponding to the given id.
+/*!
+ * \brief Deletes element with given attributes.
  *
  * \param id
- *      id of the element to delete.
+ *      ID of the node that holds the element to delete.
+ * \param siteID
+ *      ID of the site that inserted the element to delete.
+ * \param clockEntries
+ *      Clock entries of the site that inserted the element to delete.
+ *
+ * \return Whether the element was found and deleted.
  */
-LSEQTree.prototype.delete = function(id, siteID, clock){
+LSEQTree.prototype.delete = function(id, siteID, clockEntries){
     var parent = this._getNode(this._prefix(id, id.length - 2),
         function(node){node.size--;});
     
@@ -304,11 +326,11 @@ LSEQTree.prototype.delete = function(id, siteID, clock){
     var found = false;
     var i = 0;
     
-    while(!found && i<node.positions.length){
-        if(node.positions[i].getSiteID() == siteID
-            && compareClockEntries(node.positions[i].getClockEntries(), clock)){
+    while(!found && i<node.elements.length){
+        if(node.elements[i].getSiteID() == siteID
+            && areEqual(node.elements[i].getClockEntries(), clockEntries)){
                 
-            node.positions.splice(i, 1);
+            node.elements.splice(i, 1);
             node.size++;
             found = true;
         }
@@ -317,16 +339,16 @@ LSEQTree.prototype.delete = function(id, siteID, clock){
         }
     }
     
-    // The node can be physically removed if it has neither position nor child.
-    if(node.positions.length == 0 && node.children.length == 0){
+    // The node can be physically removed if it has neither element nor child.
+    if(node.elements.length == 0 && node.children.length == 0){
         parent.children[lastDepthId] = null;
     }
 
     return found;
 };
 
-/**
- * \brief Returns id of the node just before the given offset
+/*!
+ * \brief Returns ID of the node just before the given offset
  * 
  * Example : getId(0) returns document starting node
  * 
@@ -348,16 +370,16 @@ LSEQTree.prototype._getId = function(offset){
         while (!stop && i < currentNode.children.length) {
 			if(currentNode.children[i] != undefined) {
 				var childSize = currentNode.children[i].size;
-				var childPositions = currentNode.children[i].positions.length;
+				var childElements = currentNode.children[i].elements.length;
 				
-				// Child positions
+				// Child elements
 				
-				if (childPositions > 0) { // Not empty node
-					if (n + childPositions < offset) {
-						n += childPositions;
+				if (childElements > 0) { // Not empty node
+					if (n + childElements < offset) {
+						n += childElements;
 					}
 					else {
-						var pos = currentNode.children[i].positions[offset - n - 1];
+						var pos = currentNode.children[i].elements[offset - n - 1];
 						id[depth] = i;
 						siteID = pos.getSiteID();
 						clock = pos.getClockEntries();
@@ -394,34 +416,35 @@ LSEQTree.prototype._getId = function(offset){
 	return {id:id, siteID:siteID, clock:clock};
 };
 
-/**
- * \brief Returns the strategy id corresponding to the given depth of the tree.
+/*!
+ * \brief Returns the ID og the strategy of the given level.
  *
- * \param depth
- *      the depth in the tree.
+ * \param level
+ *      A level of the tree.
  */
-LSEQTree.prototype._h = function(depth){
-    Math.seedrandom(this._seed * (depth + 1));
+LSEQTree.prototype._h = function(level){
+    Math.seedrandom(this._seed * (level + 1));
     return Math.round(Math.random());
 };
 
-/**
+/*!
  * \brief Returns the maximum authorized child index for a given depth of the
  * tree.  
  *
- * \param depth
- *      the depth in the tree.
+ * \param level
+ *      A level of the tree.
  */
-LSEQTree.prototype._maxId = function(depth){
-    return this._base * (1 << depth);
+LSEQTree.prototype._maxId = function(level){
+    return this._base * (1 << level);
 };
 
-/**
- * \brief Returns the node corresponding to the given id and creates it if it
- * doesn't exist.
+/*!
+ * \brief Returns the node corresponding to the given id.
+ *
+ * If no node corresponds to the given id then a new node is created.
  *
  * \param id
- *      id of the wanted node.
+ *      id of the sought node.
  * 
  * \param f
  *      optional function to apply on every node of the path given by the id.
@@ -444,49 +467,55 @@ LSEQTree.prototype._getNode = function(id, f){
     return node;
 };
 
-/**
+/*!
  * \brief Returns the number of elements in the tree.
  */
 LSEQTree.prototype.size = function(){
     return this._root.size;
 };
 
-/**
- * \brief Returns the given id truncated to depth.
+/*!
+ * \brief Returns the given id truncated to the given level.
  *
  * \param id
  *      id to truncate.
  * 
- * \param depth
+ * \param level
+ *      A level of the tree.
  */
-LSEQTree.prototype._prefix = function(id, depth){
-    return id.slice(0, depth + 1);
+LSEQTree.prototype._prefix = function(id, level){
+    return id.slice(0, level + 1);
 };
 
-/**
+/*!
  * \brief Returns a textual representation of the tree.
  */
 LSEQTree.prototype.toString = function(){
     return this._root.toString();
 };
 
-/**
+/*!
  * \brief Insert a given value at a given id.
- *
- * \param value
- *   
- * \param id  
+ * 
+ * \param id
+ *      ID of the node that will hold the new element.
+ * \param vale
+ *      Value of the new element.
+ * \param siteID
+ *      ID of the site that inserted the new element.
+ * \param clockEntries
+ *      Clock entries of the site that inserted the new element
  */
-LSEQTree.prototype.insertWithId = function(id, value, siteID, clock){
-    var position = new Position(value, siteID, clock);
+LSEQTree.prototype.insertWithId = function(id, value, siteID, clockEntries){
+    var element = new Element(value, siteID, clockEntries);
     var stop = false;
     var i = 0;
 	
 	var node = this._getNode(id, function(node){node.size++;});
 	node.size--;
     
-    while(!stop && i< node.positions.length){
-        if(node.positions[i].compareTo(position) > 0) {
+    while(!stop && i< node.elements.length){
+        if(node.elements[i].equals(element) > 0) {
             stop = true;
         }
         else {
@@ -494,12 +523,11 @@ LSEQTree.prototype.insertWithId = function(id, value, siteID, clock){
         }
     }
 
-    node.positions.splice(i, 0, position);
+    node.elements.splice(i, 0, element);
 };
 
-/**
+/*!
  * \class LSEQ
- * \brief 
  */
 function LSEQ(){
     EventEmitter.call(this);
@@ -510,54 +538,56 @@ function LSEQ(){
 LSEQ.prototype = Object.create(EventEmitter.prototype);
 LSEQ.prototype.constructor = LSEQ;
 
-/**
- * \brief Insert the given value at the given offset.
- *
- * \param value
- *      the value to insert.
+/*!
+ * \brief Inserts the given value at the given offset (local insert).
  * 
  * \param offset
- *      offset.
+ *      Offset at which the element must be inserted.
+ * \param value
+ *      Value of the new element.
+ * \param siteID
+ *      ID of the site that inserted the new element.
+ * \param clockEntries
+ *      Clock entries of the site that inserted the new element.
  */
-LSEQ.prototype.insert = function(offset, value, siteID, clock){
+LSEQ.prototype.insert = function(offset, value, siteID, clockEntries){
     if(offset < 0 || offset > this.size()){
         throw new Error('Invalid offset');
     }
     
-    console.log("DBG clock:" + clock.toString());
-    
     var prevId = this._tree._getId(offset).id;
     var nextId = this._tree._getId(offset + 1).id;
     
-    var id = this._tree.insert(value, siteID, clock, prevId, nextId);
+    var id = this._tree.insert(value, siteID, clockEntries, prevId, nextId);
     var nextId = this._tree._getId(offset + 1).id;
 
-    this.emit('edit', {type: 'insert', value:value, id:id, siteID:siteID, clockEntries:clock});
-        
-    console.log(this.toString());
+    this.emit('edit', {type: 'insert', value:value, id:id, siteID:siteID, clockEntries:clockEntries});
     
     return id;
 };
 
-/**
- * \brief Insert a new node with given id and value.
- *
- * \param value
- *      Value of the new node.
+/*!
+ * \brief Inserts a new node with the given ID (foreign insert).
  * 
  * \param id
  *      ID of the new node.
+ * \param value
+ *      Value of the new element.
+ * \param siteID
+ *      ID of the site that inserted the new element.
+ * \param clockEntries
+ *      Clock entries of the site that inserted the new element.
  */
-LSEQ.prototype.foreignInsert = function(id, value, siteID, clock) {
+LSEQ.prototype.foreignInsert = function(id, value, siteID, clockEntries) {
     
-    this._tree.insertWithId(id, value, siteID, clock);
+    this._tree.insertWithId(id, value, siteID, clockEntries);
 
     // Get parent node
     
 	var parentId = id.slice(0, id.length - 1);
     var parent = this._tree._getNode(parentId);
 
-    // Get not empty parent node
+    // Get existing parent node
     // [0.0.0] => []
     // [12.3.0] => [12.3]
 
@@ -571,7 +601,7 @@ LSEQ.prototype.foreignInsert = function(id, value, siteID, clock) {
     // Compute new node offset
     
 	var parentOffset = this._getOffset(parentId);
-	var num = parent.ChildNumber(id[id.length - 1], siteID, clock);
+	var num = parent.ChildNumber(id[id.length - 1], siteID, clockEntries);
 	var newOffset = parentOffset + num;
 
     this.emit('foreignInsert', {value:value, id:id, offset:newOffset, siteID:siteID});
@@ -579,11 +609,11 @@ LSEQ.prototype.foreignInsert = function(id, value, siteID, clock) {
 	return newOffset;
 };
 
-/**
- * \brief Delete the element at the given offset.
+/*!
+ * \brief Deletes the element at the given offset (local delete).
  *
  * \param offset
- *      offset.
+ *      Offset of the element to delete.
  */
 LSEQ.prototype.delete = function(offset){
     if(offset < 0 || offset > this.size()){
@@ -593,24 +623,26 @@ LSEQ.prototype.delete = function(offset){
     var x = this._tree._getId(offset);
     var id = x.id;
     var siteID = this._tree._getId(offset).siteID;
-    var clock = this._tree._getId(offset).clock;
+    var clockEntries = this._tree._getId(offset).clock;
     
-    this._tree.delete(id, siteID, clock);
+    this._tree.delete(id, siteID, clockEntries);
 
-    this.emit('edit', {type: 'delete', id:id, siteID:siteID, clockEntries:clock});
-        
-    console.log(this.toString());
+    this.emit('edit', {type: 'delete', id:id, siteID:siteID, clockEntries:clockEntries});
     
     return id;
 };
 
-/**
- * \brief Delete the element with the given id.
+/*!
+ * \brief Deletes the element with the given id.
  *
  * \param id
  *      ID of the node to delete.
+ * \param siteID
+ *      ID of the site that inserted the element.
+ * \param clockEntries
+ *      Clock entries of the site that inserted the element.
  */
-LSEQ.prototype.foreignDelete = function(id, siteID, clock){
+LSEQ.prototype.foreignDelete = function(id, siteID, clockEntries){
     
     // Get parent node
 	var parentId = id.slice(0, id.length - 1);
@@ -631,17 +663,21 @@ LSEQ.prototype.foreignDelete = function(id, siteID, clock){
     
 	var parentOffset = this._getOffset(parentId);
     
-	var num = parent.ChildNumber(id[id.length - 1], siteID, clock);
+	var num = parent.ChildNumber(id[id.length - 1], siteID, clockEntries);
     
 	var offset = parentOffset + num;
 	
-    this._tree.delete(id, siteID, clock);
-
-    console.log("DBG LSEQ emit foreignDelete " + offset);
+    this._tree.delete(id, siteID, clockEntries);
 
     this.emit('foreignDelete', {offset:offset});
 };
 
+/*!
+ * Returns the offset of the node with the given ID.
+ *
+ * \param id
+ *      ID of a node in the LSEQ tree.
+ */
 LSEQ.prototype._getOffset = function(id) {
 	var offset = 0;
 	var currentNode = this._tree._root;
@@ -654,7 +690,7 @@ LSEQ.prototype._getOffset = function(id) {
 			var child = currentNode.children[i];
 			
 			if(child != undefined && child != null) {
-				offset += child.positions.length;
+				offset += child.elements.length;
 				offset += child.children.length;
 			}
 			
@@ -662,104 +698,44 @@ LSEQ.prototype._getOffset = function(id) {
 		}
 
         child = currentNode.children[i];
-		offset += child.positions.length;
+		offset += child.elements.length;
 		currentNode = child;
 	}
 	
 	return offset;
 };
 
+/*!
+ * Returns the number of elements in the LSEQ document.
+ */
 LSEQ.prototype.size = function(){
     return this._tree.size();
 };
 
-/**
- * Compare 2 LSEQ node ids.
- * 
- * \param id1 A node ID
- * \param id2 A node ID
- * 
- * \return 
- * <ul>
- * <li>-1 if id1 < id2</li>
- * <li>0 if id1 = id2</li>
- * <li>1 if id1 > id2</li><
- * /ul>
- */
-LSEQ.prototype._compareIDs = function(id1, id2) {
-	var res = 0;
-	var stop = false;
-	var i = 0;
-	
-	while (stop == false) {
-		var fragment1 = id1[i];
-		var fragment2 = id2[i];
-		
-		if (fragment1 == undefined && fragment2 == undefined) {
-			stop = true;
-			res = 0;
-		}
-		else if (fragment1 == undefined) {
-			stop = true;
-			res = -1;
-		}
-		else if (fragment2 == undefined) {
-			stop = true;
-			res = 1;
-		}
-		else {
-			var diff = fragment1 - fragment2;
-			
-			if (diff > 0) {
-				stop = true;
-				res = 1;
-			}
-			else if (diff < 0) {
-				stop = true;
-				res = -1;
-			}
-		}
-		
-		if(stop == false) {
-			++i;
-		}
-	}
-	
-	return res;
-};
-
-/**
- * \brief 
+/*!
+ * Handles edit message.
  */
 LSEQ.prototype.onDelivery = function(message){
-    console.log("DBG onDelivery");
-    
     if(!message.error) {
         if(message.local) { // Local site edition
 			if(message.msg.type == 'insert'){
-				console.log("DBG LSEQ insert " + message.msg.offset);
 				this.insert(message.msg.offset, message.msg.value, message.id, message.entries);
 			}
 			else if(message.msg.type == 'delete'){
-				console.log("DBG LSEQ delete " + message.msg.offset);
 				this.delete(message.msg.offset);
 			}
         }
         else { // Distant site edition
 			if(message.msg.type == 'insert'){
-				console.log("DBG LSEQ foreignInsert " + message.msg.id);
 				this.foreignInsert(message.msg.id, message.msg.value, message.msg.siteID, message.msg.clockEntries);
 			}
 			else if(message.msg.type == 'delete'){
-				console.log("DBG LSEQ foreignDelete " + message.msg.id);
 				this.foreignDelete(message.msg.id, message.msg.siteID, message.msg.clockEntries);
 			}
         }
-        
-        console.log(this.toString());
     }
     else {
-        // Error of causality
+        // Error of causality not supported for now
     }
 };
 
