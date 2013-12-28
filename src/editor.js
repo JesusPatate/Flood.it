@@ -18,41 +18,54 @@ function Editor(contentEditableId){
 	// Wether the last edit was remote
 	this._external = false;
 	this._editor = ace.edit(contentEditableId);
+	this._editor.setBehavioursEnabled(false);
     
     this._editor.getSession().on('change', onEdition);
     
     function onEdition(e){
 		if(!self._external){
 			var startOffset = self._editor.getSession().getDocument().positionToIndex(e.data.range.start);
+			
+			/*
 			var endOffset = self._editor.getSession().getDocument().positionToIndex(e.data.range.end);
-            
+			
 			if(startOffset == endOffset) {
 				++endOffset;
 			}
+			*/
 			
 			switch(e.data.action){
 				case 'insertText' :
-					var j = 0;
-					for(var i = startOffset ; i < endOffset ; ++i) {
-						self.emit("edit", {type: 'insert', value: e.data.text[j], offset: i});
-						++j;
+					for (var i = 0 ; i < e.data.text.length ; ++i) {
+						self.emit("edit", {type: 'insert', value: e.data.text[i], offset: startOffset});
+						++startOffset;
 					}
 					break;
                 
 				case 'removeText' :
-					for(var i = startOffset ; i < endOffset ; ++i) {
+					for (var i = 0 ; i < e.data.text.length ; ++i) {
 						self.emit("edit", {type: 'delete', offset: (startOffset + 1)});
 					}
 					break;
 
                 case 'insertLines' :
-                	console.log("DBG " + e.data);
+					var lines = e.data.lines;
+                    var nbLines = e.data.lines.length;
+                    
+                    for(var i = 0 ; i < nbLines ; ++i) {
+                    	for(var j = 0 ; j < lines[i].length ; ++j) {
+                        	self.emit("edit", {type: 'insert', offset: startOffset, value: e.data.lines[i][j]});
+                        	++startOffset;
+                        }
+                        
+                        self.emit("edit", {type: 'insert', offset: startOffset, value: '\n'});
+                        ++startOffset;
+                    }
                     break;
 
                 case 'removeLines' :
                 	var lines = e.data.lines;
                     var nbLines = e.data.lines.length;
-                    var offset = startOffset;
                     
                     for(var i = 0 ; i < nbLines ; ++i) {
                     	for(var j = 0 ; j < lines[i].length + 1 ; ++j) {
