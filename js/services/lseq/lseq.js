@@ -29,7 +29,7 @@
      * \return a LseqCouple
      */
     this.get = function(index) {
-      return array[index+1];
+      return array[index];
     };
 
     /*!
@@ -46,8 +46,8 @@
         var element = inArray[idx].element;
         
         // #1 getting the bounds
-        var pei = this.get(index-1);
-        var qei = this.get(index);
+        var pei = this.get(index);
+        var qei = this.get(index + 1);
 
         // #2 generating the identifier between the bound
         clock += 1;
@@ -76,9 +76,9 @@
       var outArray = [];
 
       for (var idx = array.length - 1 ; idx >= 0 ; --idx) {
-        var index = array[idx];
+        var index = array[idx] + 1; // NOTE: array[0] = BEGIN
     
-        if (index > -1) {
+        if (index > 0) {
           var id = this.get(index).id;
           this.applyRemove(id);
           outArray.push({id: id});
@@ -153,7 +153,7 @@
           for (var i in data.data) {
             couple = data.data[i];
             index = this.applyInsert(couple.elt, couple.id);
-            array.push({index: index - 1, element: couple.elt});
+            array.push({index: index - 1, element: couple.elt}); // NOTE: array[0] = BEGIN
           }
           
           event = 'remoteInsertion';
@@ -165,7 +165,7 @@
           for (var i in data.data) {
             id = data.data[i].id;
             index = this.applyRemove(id);
-            array.push(index - 1);
+            array.push(index - 1); // NOTE: array[0] = BEGIN
           }
           
           event = 'remoteDeletion';
