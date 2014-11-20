@@ -14,7 +14,6 @@
       var event = evt[0];
       
       if (!remoteUpdate) {
-        var msg = {type: event.data.action, data: []};
         var pos = getStartPosition(event);
         
         switch(event.data.action) {
@@ -23,15 +22,15 @@
             break;
 
           case 'removeText':
-            removeText(pos, event.data.text, msg);
+            removeText(pos, event.data.text);
             break;
           
           case 'insertLines':
-            insertLines(pos, event.data.lines, msg);
+            insertLines(pos, event.data.lines);
             break; 
 
           case 'removeLines':
-            removeLines(pos, event.data.lines, msg);
+            removeLines(pos, event.data.lines);
             break;
 
           default:
@@ -76,7 +75,7 @@
       lseq.insert(array);
     }
 
-    function insertLines(position, lines, msg) {
+    function insertLines(position, lines) {
       var array = [];
       
       for (var idxLine in lines) {
@@ -91,7 +90,7 @@
       }
     }
 
-    function removeText(position, text, msg) {
+    function removeText(position, text) {
       var array = [];
       
       for (var i = 0 ; i < text.length ; ++i) {
@@ -101,7 +100,7 @@
       lseq.remove(array);
     }
 
-    function removeLines(position, lines, msg) {
+    function removeLines(position, lines) {
       var array = [];
       var p = position;
       var line;
