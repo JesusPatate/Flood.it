@@ -2,24 +2,20 @@
 
 (function() {
   var app = angular.module('floodit', ['ui.bootstrap','ui.ace']);
-  
-  app.run(function(network, messageHandler, lseq, editorService) {
-    network.addListener('join', messageHandler.sendJoin);
-    network.addListener('ready', messageHandler.sendReady);
-    network.addListener('handleMessage', messageHandler.handle);
-    messageHandler.addListener('buildConnections', network.buildConnections);
-    lseq.addListener('insertion', messageHandler.sendInsertion);
-    lseq.addListener('deletion', messageHandler.sendDeletion);
-    lseq.addListener('remoteInsertion', editorService.applyInsertion);
-    lseq.addListener('remoteDeletion', editorService.applyDeletion);
+
+  app.run(function(server, editorService) {
+    editorService.addListener('insertion', server.insert, server);
+    editorService.addListener('deletion', server.remove, server);
+    server.addListener('remoteInsertion', editorService.applyInsertion, editorService);
+    server.addListener('remoteDeletion', editorService.applyDeletion, editorService);
   });
 
   // Server controller
 
   app.controller('ServerCtrl', [
-    '$scope', '$modal', '$log', 'network', 'messageHandler', 'doc', 'lseq', 'alerts',
-    function($scope, $modal, $log, network, messageHandler, doc, lseq, alerts) {
-    
+    '$scope', '$modal', '$log', 'server', 'doc', 'alerts',
+    function($scope, $modal, $log, server, doc, alerts) {
+
     var scope = $scope;
     var mainScope = scope.$parent;
 
@@ -28,14 +24,13 @@
       text: 'Connect',
       activeText: 'Connecting...'
     };
-    
+
     var userInputs = {};
-    
+
     scope.register = function(inputs) {
       userInputs = inputs;
-      
-      var registerPromise = network.register(inputs.address, inputs.port);
-        
+
+      var registerPromise = server.register(inputs.address, inputs.port);
       registerPromise.then(registerSuccess, registerFailure);
     };
 
@@ -48,40 +43,30 @@
     function registerSuccess(id) {
       doc.setTitle(userInputs.title);
       doc.setAlias(userInputs.alias);
-      doc.setModel(lseq);
-      
-      messageHandler.init(id);
-      lseq.init(id);
-      
+
       if (userInputs.action === 'join') {
         join();
-      }
-      else {
+      } else {
         connected();
       }
     }
 
     function registerFailure(err) {
-      alerts.showDanger(err.message, err.title);
       scope.button.active = false;
     }
 
     function join() {
-      var joinPromise = network.join(userInputs.remoteID);
-
-      joinPromise.then(
-        connected,
-        function(err) {
-          // Failed to join remote peers
-          alerts.showDanger(err.message, err.title);
-          scope.button.active = false;
-        }
-      );
+      var joinPromise = server.join(userInputs.remoteID);
+      joinPromise.then(connected, joinFailure);
     }
 
     function connected() {
       alerts.showSuccess('You successfully connected.');
       mainScope.connected = true;
+    }
+
+    function joinFailure() {
+      scope.button.active = false;
     }
   }]);
 
@@ -93,7 +78,7 @@
       },
       link: function($scope, element, attrs) {
         var oldValue;
-        
+
         $scope.$watch("active", function(value) {
           if (value) {
             oldValue = element.text();
@@ -101,7 +86,7 @@
           } else {
             element.text(oldValue);
           }
-          
+
           element.attr("disabled", value);
         });
 
@@ -119,16 +104,16 @@
   app.controller('ClientCtrl', [
     '$scope', '$timeout', 'doc', 'editorService',
     function($scope, $timeout, doc, editorService) {
-    
+
     $scope.doc = {};
-    
+
     doc.addListener(function() {
       $scope.doc.title = doc.getTitle();
       $scope.doc.alias = doc.getAlias();
       $scope.doc.participants = doc.getParticipants();
 
       // XXX $applyAsinc not available within this version of angular (<1.3.0) :(
-      $timeout(function() { 
+      $timeout(function() {
         $scope.$apply();
       }, 100);
     });

@@ -25,7 +25,7 @@
       </div>
 
       <div id="serverSide" ng-controller="ServerCtrl">
-        
+
         <div class="row text-center" ng-controller="ModalCtrl" ng-hide="hideConnectBtn">
           <div class="col-sm-12 form-group">
             <button id="connectBtn" class="btn btn-default" fi-toggle="button.active" active-text="button.activeText" ng-hide="connected"
@@ -80,13 +80,13 @@
             </div>
           </script>
         </div>
-        
+
       </div> <!--/serverSide-->
 
       <div id="clientSide" ng-controller="ClientCtrl">
-        
+
         <div ui-ace="{ onLoad : aceLoaded, onChange: aceChanged }" readonly="{{!connected}}"></div>
-        
+
         <div id="infoPanel" class="panel panel-default">
           <div class="panel-body">
             <p>Document title: {{doc.title}}</p>
@@ -98,7 +98,7 @@
             </p>
           </div>
         </div>
-        
+
       </div> <!--/clientSide-->
 
     </div> <!--/container-->
@@ -118,6 +118,7 @@
     <script type="text/javascript" src="js/services/alerts.js"></script>
     <script type="text/javascript" src="js/services/document.js"></script>
     <script type="text/javascript" src="js/services/editor.js"></script>
+    <script type="text/javascript" src="js/services/server.js"></script>
     <script type="text/javascript" src="js/services/network.js"></script>
     <script type="text/javascript" src="js/services/connections.js"></script>
     <script type="text/javascript" src="js/services/messagehandler.js"></script>

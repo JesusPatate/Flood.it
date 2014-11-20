@@ -2,20 +2,21 @@
 
 (function() {
   angular.module('floodit').service('editorService', ['lseq', 'messageHandler', function(lseq, messageHandler) {
-    var self = this;
+    var callbacks = {};
+
     var remoteUpdate = false;
     var editor;
-    
+
     this.init = function(edt) {
       editor = edt;
     };
-    
+
     this.handle = function(evt) {
       var event = evt[0];
-      
+
       if (!remoteUpdate) {
         var pos = getStartPosition(event);
-        
+
         switch(event.data.action) {
           case 'insertText':
             insertText(pos, event.data.text);
@@ -24,10 +25,10 @@
           case 'removeText':
             removeText(pos, event.data.text);
             break;
-          
+
           case 'insertLines':
             insertLines(pos, event.data.lines);
-            break; 
+            break;
 
           case 'removeLines':
             removeLines(pos, event.data.lines);
@@ -37,94 +38,73 @@
         }
       }
     };
-    
+
     this.applyInsertion = function(array) {
       var old, delta;
-      
+
       for(var idx in array) {
         old = remoteUpdate;
         delta = asDelta('insertText', array[idx].index, array[idx].element);
-        
+
         remoteUpdate = true;
         editor.getSession().getDocument().applyDeltas([delta]);
         remoteUpdate = old;
       }
     };
-    
+
     this.applyDeletion = function(array) {
       var old, delta;
-      
+
       for(var idx in array) {
         old = remoteUpdate;
         delta = asDelta('removeText', array[idx]);
-        
+
         remoteUpdate = true;
         editor.getSession().getDocument().applyDeltas([delta]);
         remoteUpdate = old;
       }
     };
 
-    function insertText(position, text) {
-      var array = [];
-      
-      for (var idx in text) {
-        array.push({index: position, element: text[idx]});
-        ++position;
+    this.addListener = function(event, callback, obj) {
+      if(!callbacks[event]) {
+        callbacks[event] = [];
       }
 
-      lseq.insert(array);
+      callbacks[event].push({obj: obj, callback: callback});
+    };
+
+    function insertText(position, text) {
+      notify('insertion', position, text);
     }
 
     function insertLines(position, lines) {
-      var array = [];
-      
-      for (var idxLine in lines) {
-        var line = lines[idxLine] + '\n';
+      var text = "";
 
-        for (var idxElt in line) {
-          array.push({index: position, element: line[idxElt]});
-          ++position;
-        }
-
-        lseq.insert(array);
+      for (var idxLine = 0 ; idxLine < lines.length ; ++idxLine) {
+        text += lines[idxLine] + '\n';
       }
+
+      notify('insertion', position, text);
     }
 
     function removeText(position, text) {
-      var array = [];
-      
-      for (var i = 0 ; i < text.length ; ++i) {
-        array.push(position + i);
-      }
-
-      lseq.remove(array);
+      notify('deletion', position, text.length);
     }
 
     function removeLines(position, lines) {
-      var array = [];
-      var p = position;
-      var line;
+      var nb = 0;
 
-      for (var idxLine in lines) {
-        line = lines[idxLine];
-        
-        for (var idxElt in line) {
-          array.push(p);
-          ++p;
-        }
-
-        // Ending newline
-        array.push(p);
-        ++p;
+      for (var idxLine = 0 ; idxLine < lines.length ; ++idxLine) {
+        nb += lines[idxLine].length + 1;
       }
 
-      lseq.remove(array);
+      notify('deletion', position, nb);
     }
-    
+
     function getStartPosition(evt) {
       return editor.getSession().getDocument().positionToIndex(evt.data.range.start);
     }
-    
+
     function getEndPosition(evt) {
       return editor.getSession().getDocument().positionToIndex(evt.data.range.end) - 1;
     }
@@ -139,6 +119,21 @@
         text: text
       };
     }
+
+    function notify(event) {
+      var argumentsArray = Array.prototype.slice.apply(arguments);
+      argumentsArray.splice(0,1);
+
+      if (callbacks[event]) {
+        var entry;
+
+        for (var idx in callbacks[event]) {
+          entry = callbacks[event][idx];
+          entry.callback.apply(entry.obj, argumentsArray);
+        }
+      }
+    }
+
   }]);
 })();
 
