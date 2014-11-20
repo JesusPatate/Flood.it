@@ -40,7 +40,7 @@
     };
 
     scope.modalDismissed = function() {
-      // Modal closed unless the form was not submitted
+      // Modal closed while the form was not submitted
       $log.error('Connection modal dismissed at: ' + new Date());
       scope.button.active = false;
     };

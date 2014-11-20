@@ -26,7 +26,7 @@
     var callbacks = {};
 
     /**
-     * \brief Logs on to the p2p netbork by registering with the broker server.
+     * \brief Logs on to the p2p network by registering with the broker server.
      * \param host address at which the broker server can be reached (IP or domain name)
      * \param port port at which the broker server can be reached
      * \return a promise
