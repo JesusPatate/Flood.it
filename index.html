@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html ng-app="floodit">
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8">
+    <link rel="stylesheet" type="text/css" href="bower_components/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="index.css" />
+  </head>
+	<body>
+    <div class="container">
+
+      <header class="page-header">
+        <div class="navbar navbar-inverse navbar-fixed-top">
+          <div class="navbar-header">
+            <a href="#infos" class="navbar-brand" data-toggle="modal">Flood.it</a>
+          </div>
+        </div>
+      </header>
+
+      <div ng-controller="AlertCtrl" class="text-center">
+        <alert ng-repeat="alert in alerts" type="{{alert.type}}" close="closeAlert($index)">
+          <h4>{{alert.title}}</h4>
+          {{alert.message}}
+        </alert>
+      </div>
+
+      <div id="serverSide" ng-controller="ServerCtrl">
+        
+        <div class="row text-center" ng-controller="ModalCtrl" ng-hide="hideConnectBtn">
+          <div class="col-sm-12 form-group">
+            <button id="connectBtn" class="btn btn-default" fi-toggle="button.active" active-text="button.activeText" ng-hide="connected"
+              ng-click="openModal(register, modalDismissed)">
+              {{button.text}}
+            </button>
+          </div>
+
+          <script type="text/ng-template" id="myModalContent.html">
+            <div class="modal-header">
+              <h3 class="modal-title">Connection</h3>
+            </div>
+            <div class="modal-body">
+              <form name="connectionForm" novalidate>
+                <fieldset class="form-group">
+                  <legend>Broker Server</legend>
+                  <div class="form-group">
+                    <label for="hostAddress">Address</label>
+                    <input type="text" name="hostAddress" class="form-control"
+                      pattern="^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))|((([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){5}:([0-9A-Fa-f]{1,4}:)?[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){4}:([0-9A-Fa-f]{1,4}:){0,2}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){3}:([0-9A-Fa-f]{1,4}:){0,3}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){2}:([0-9A-Fa-f]{1,4}:){0,4}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){6}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(([0-9A-Fa-f]{1,4}:){0,5}:((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|(::([0-9A-Fa-f]{1,4}:){0,5}((b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b).){3}(b((25[0-5])|(1d{2})|(2[0-4]d)|(d{1,2}))b))|([0-9A-Fa-f]{1,4}::([0-9A-Fa-f]{1,4}:){0,5}[0-9A-Fa-f]{1,4})|(::([0-9A-Fa-f]{1,4}:){0,6}[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,7}:))$|^localhost$|^(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)$"
+                      ng-model="inputs.address" ng-model-options="{ updateOn: 'blur' }" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="hostPort">Port</label>
+                    <input type="number" min=0 max=65536 name="hostPort" placeholder="Port" class="form-control" ng-model="inputs.port" ng-model-options="{ updateOn: 'blur' }" required>
+                    </div>
+                </fieldset>
+                <fieldset class="form-group">
+                  <legend>Document</legend>
+                  <div class="form-group">
+                    <label for="alias">Your alias:</label>
+                    <input type="text" id="alias" name="alias" placeholder="Alias" class="form-control" ng-model="inputs.alias" ng-model-options="{ updateOn: 'blur' }" required />
+                  </div>
+                  <div class="form-group">
+                  <select class="form-control" ng-model="inputs.action" required>
+                    <option value="" selected>You want to...</option>
+                    <option value="create">Create a new document</option>
+                    <option value="join">Join a document</option>
+                  </select>
+                  </div>
+                  <div class="form-group" ng-if="inputs.action === 'create'">
+                    <label for="title">Document title</label>
+                    <input type="text" name="title" class="form-control" ng-model="inputs.title" ng-model-options="{ updateOn: 'blur' }" required />
+                  </div>
+                  <div class="form-group" ng-if="inputs.action === 'join'">
+                    <label for="remoteID">ID to join</label>
+                    <input type="text" name="remoteID" class="form-control" ng-model="inputs.remoteID" ng-model-options="{ updateOn: 'blur' }" required />
+                  </div>
+                </fieldset>
+                <button class="form-control btn btn-default" ng-click="ok()">Submit</button>
+              </form>
+            </div>
+          </script>
+        </div>
+        
+      </div> <!--/serverSide-->
+
+      <div id="clientSide" ng-controller="ClientCtrl">
+        
+        <div ui-ace="{ onLoad : aceLoaded, onChange: aceChanged }" readonly="{{!connected}}"></div>
+        
+        <div id="infoPanel" class="panel panel-default">
+          <div class="panel-body">
+            <p>Document title: {{doc.title}}</p>
+            <p id="participants">
+              Participants:
+              <ul class="list-inline">
+                <li ng-repeat="p in doc.participants">{{p.alias}} ({{p.id}})</li>
+              </ul>
+            </p>
+          </div>
+        </div>
+        
+      </div> <!--/clientSide-->
+
+    </div> <!--/container-->
+
+    <script type="text/javascript" src="bower_components/angular/angular.min.js"></script>
+    <script type="text/javascript" src="bower_components/jquery/dist/jquery.min.js"></script>
+    <script type="text/javascript" src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="bower_components/angular-bootstrap/ui-bootstrap-tpls.min.js"></script>
+    <script type="text/javascript" src="bower_components/peerjs/dist/peer.min.js"></script>
+    <script type="text/javascript" src="bower_components/ace-builds/src-min-noconflict/ace.js"></script>
+    <script type="text/javascript" src="bower_components/angular-ui-ace/ui-ace.js"></script>
+
+    <script type="text/javascript" src="js/app.js"></script>
+    <script type="text/javascript" src="js/alertcontroller.js"></script>
+    <script type="text/javascript" src="js/modalcontroller.js"></script>
+
+    <script type="text/javascript" src="js/services/alerts.js"></script>
+    <script type="text/javascript" src="js/services/document.js"></script>
+    <script type="text/javascript" src="js/services/editor.js"></script>
+    <script type="text/javascript" src="js/services/network.js"></script>
+    <script type="text/javascript" src="js/services/connections.js"></script>
+    <script type="text/javascript" src="js/services/messagehandler.js"></script>
+    <script type="text/javascript" src="js/services/versionvector.js"></script>
+
+    <script type="text/javascript" src="js/services/lseq/lseq.js"></script>
+    <script type="text/javascript" src="js/services/lseq/base.js"></script>
+    <script type="text/javascript" src="js/services/lseq/identifier.js"></script>
+    <script type="text/javascript" src="js/services/lseq/couple.js"></script>
+    <script type="text/javascript" src="js/services/lseq/strategies.js"></script>
+    <script type="text/javascript" src="js/services/lseq/bigint.js"></script>
+	</body>
+	</body>
+</html>

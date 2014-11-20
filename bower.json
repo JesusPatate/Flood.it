@@ -1,0 +1,22 @@
+{
+  "name": "Flood.it",
+  "version": "0.0.0",
+  "homepage": "https://github.com/jesuspatate/Flood.it",
+  "description": "A decentralized real-time collaborative text editor",
+  "main": "index.html",
+  "authors": [
+    "JesusPatate"
+  ],
+  "license": "GPLv3",
+  "private": true,
+  "ignore": [
+    "**/.*"
+  ],
+  "dependencies": {
+    "angular": ">=1",
+    "bootstrap": ">3.3.0",
+    "angular-ui-ace": ">=0.1.1",
+    "peerjs": "https://github.com/peers/peerjs.git#~0.3.14",
+    "angular-bootstrap": "~0.12.0"
+  }
+}

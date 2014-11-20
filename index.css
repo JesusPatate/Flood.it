@@ -1,0 +1,35 @@
+.ace_editor {
+  border: 1px solid #DEDEDE;
+  overflow: auto;
+  min-height: 300px;
+  resize: vertical;
+  overflow: auto;
+}
+
+.form-control + .form-control {
+  margin-top : 1em;
+}
+
+.ng-invalid.ng-dirty {
+  border-color: #FA787E;
+}
+
+.ng-valid.ng-dirty {
+  border-color: #CCCCCC;
+}
+
+#serverSide {
+  margin-bottom: 1em;
+}
+
+#infoPanel {
+  margin-top : 1em;
+}
+
+ul, li, #participants {
+  display: inline;
+}
+
+li {
+  margin-left: 1em;
+}
