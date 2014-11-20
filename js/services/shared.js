@@ -1,52 +1,61 @@
 "use strict";
 
 (function() {
-  angular.module('floodit').service('doc', [
-    '$log', 'lseq', function($log, lseq) {
-    
-    var title = null;
-    var model = lseq;
-    var alias = null;
-    var participants = [];
+  angular.module('floodit').service('sharedData', function() {
+
     var callbacks = [];
-    
-    this.setModel = function() {
-      return model;
-      
-      notify();
+
+    var localID;
+    var title;
+    var model;
+    var alias;
+    var participants = [];
+
+    this.getLocalID = function() {
+      return localID;
     };
-    
-    this.getModel = function() {
-      return model;
+
+    this.setLocalID = function(id) {
+      localID = id;
     };
-    
-    this.getTitle = function() {
-      return title;
-    };
-    
-    this.setTitle = function(t) {
-      title = t;
-      
-      notify();
-    };
-    
+
     this.getAlias = function() {
       return alias;
     };
-    
+
     this.setAlias = function(a) {
       alias = a;
-      
+
       notify();
     };
-    
+
+    this.getDocumentTitle = function() {
+      return title;
+    };
+
+    this.setDocumentTitle = function(t) {
+      title = t;
+
+      notify();
+    };
+
+    this.getDocumentModel = function() {
+      return model;
+    };
+
+    this.setDocumentModel = function(m) {
+      model = m;
+
+      notify();
+    };
+
     this.getParticipants = function() {
       return participants;
     };
-    
+
     this.addParticipant = function(id, alias) {
       var known = false;
-      
+
       for(var idx in participants) {
         if(participants[idx].id === id) {
           known = true;
@@ -58,11 +67,11 @@
         notify();
       }
     };
-    
+
     this.removeParticipant = function(id) {
       var i = 0;
       var found = false;
-      
+
       while(i < participants.length && !found) {
         if(participants[i].id === id) {
           found = true;
@@ -71,7 +80,7 @@
           ++i;
         }
       }
-      
+
       if(found) {
         participants.splice(i, 1);
         notify();
@@ -81,15 +90,15 @@
           + ' (known participants: ' + participants + ')');
       }
     };
-    
+
     this.addListener = function(callback) {
       callbacks.push(callback);
     };
-    
+
     function notify() {
       for(var i in callbacks) {
         callbacks[i]();
       }
     };
-  }]);
+  });
 })();

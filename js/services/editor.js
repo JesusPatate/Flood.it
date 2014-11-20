@@ -1,7 +1,7 @@
 "use strict";
 
 (function() {
-  angular.module('floodit').service('editorService', ['lseq', 'messageHandler', function(lseq, messageHandler) {
+  angular.module('floodit').service('editorService', function() {
     var callbacks = {};
 
     var remoteUpdate = false;
@@ -134,6 +134,6 @@
       }
     }
 
-  }]);
+  });
 })();
 

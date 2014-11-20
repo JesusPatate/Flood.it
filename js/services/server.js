@@ -11,8 +11,8 @@
   });
 
   app.service('server', [
-    '$q', 'network', 'messageHandler', 'lseq', 'doc', 'alerts',
-    function($q, network, messageHandler, lseq, doc, alerts) {
+    '$q', 'network', 'messageHandler', 'lseq', 'sharedData', 'alerts',
+    function($q, network, messageHandler, lseq, sharedData, alerts) {
 
     var callbacks = {};
 
@@ -28,7 +28,8 @@
 
       promise.then(
         function(id) {
-          doc.setModel(lseq);
+          sharedData.setLocalID(id);
+          sharedData.setDocumentModel(lseq);
 
           messageHandler.init(id);
           lseq.init(id);

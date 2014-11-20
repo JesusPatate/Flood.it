@@ -89,13 +89,14 @@
 
         <div id="infoPanel" class="panel panel-default">
           <div class="panel-body">
-            <p>Document title: {{doc.title}}</p>
+            <p>Document title: {{doc.getDocumentTitle()}}</p>
             <p id="participants">
               Participants:
               <ul class="list-inline">
-                <li ng-repeat="p in doc.participants">{{p.alias}} ({{p.id}})</li>
+                <li ng-repeat="p in doc.getParticipants()">{{p.alias}} ({{p.id}})</li>
               </ul>
             </p>
+            <p>Your ID: {{doc.getLocalID()}}</p>
           </div>
         </div>
 
@@ -116,7 +117,7 @@
     <script type="text/javascript" src="js/modalcontroller.js"></script>
 
     <script type="text/javascript" src="js/services/alerts.js"></script>
-    <script type="text/javascript" src="js/services/document.js"></script>
+    <script type="text/javascript" src="js/services/shared.js"></script>
     <script type="text/javascript" src="js/services/editor.js"></script>
     <script type="text/javascript" src="js/services/server.js"></script>
     <script type="text/javascript" src="js/services/network.js"></script>

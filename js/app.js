@@ -13,8 +13,8 @@
   // Server controller
 
   app.controller('ServerCtrl', [
-    '$scope', '$modal', '$log', 'server', 'doc', 'alerts',
-    function($scope, $modal, $log, server, doc, alerts) {
+    '$scope', '$modal', '$log', 'server', 'sharedData', 'alerts',
+    function($scope, $modal, $log, server, sharedData, alerts) {
 
     var scope = $scope;
     var mainScope = scope.$parent;
@@ -41,8 +41,8 @@
     };
 
     function registerSuccess(id) {
-      doc.setTitle(userInputs.title);
-      doc.setAlias(userInputs.alias);
+      sharedData.setDocumentTitle(userInputs.title);
+      sharedData.setAlias(userInputs.alias);
 
       if (userInputs.action === 'join') {
         join();
@@ -102,16 +102,12 @@
   // Client controller
 
   app.controller('ClientCtrl', [
-    '$scope', '$timeout', 'doc', 'editorService',
-    function($scope, $timeout, doc, editorService) {
+    '$scope', '$timeout', 'sharedData', 'editorService',
+    function($scope, $timeout, sharedData, editorService) {
 
-    $scope.doc = {};
+    $scope.doc = sharedData;
 
-    doc.addListener(function() {
-      $scope.doc.title = doc.getTitle();
-      $scope.doc.alias = doc.getAlias();
-      $scope.doc.participants = doc.getParticipants();
-
+    sharedData.addListener(function() {
       // XXX $applyAsinc not available within this version of angular (<1.3.0) :(
       $timeout(function() {
         $scope.$apply();

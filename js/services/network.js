@@ -8,21 +8,21 @@
     JOINING: 2, // When trying to join a document
     CONNECTED: 3 // When registered / connected to all other participants
   };
-    
+
   angular.module('floodit').service('network', [
-    '$log','$q','connections', 'alerts', 'doc',
-    function($log, $q, connections, alerts, doc) {
+    '$log','$q','connections', 'alerts', 'sharedData',
+    function($log, $q, connections, alerts, sharedData) {
 
     var self = this;
 
     var peer;
     var state = statesEnum.NOT_REGISTERED;
-    
+
     var joinId;
     var joinDeferred;
     var registerDeferred;
     var peersToJoin = [];
-    
+
     var callbacks = {};
 
     /**
@@ -54,22 +54,22 @@
           ],
           debug: 1
         };
-        
+
         peer = new Peer(options);
-        
+
         peer.on('error', handlePeerError);
 
         peer.on('open', function(id) {
           $log.info('Connected to the broker server');
           $log.info('Local ID: ' + id);
-          
+
           // TODO Complete handlers
           peer.on('disconnected', function() {});
           peer.on('close', function() {});
 
           state = statesEnum.CONNECTED;
           acceptNewConnections();
-          
+
           registerDeferred.resolve(id);
         });
       }
@@ -84,12 +84,12 @@
      */
     this.join = function(id) {
       joinId = id;
-      
+
       state = statesEnum.JOINING;
       joinDeferred = $q.defer();
 
       var connection = peer.connect(joinId);
-      
+
       connection.on('open', function() {
         handleConnectionOpen(connection);
         notify('join', joinId);
@@ -108,26 +108,26 @@
       else {
         for(var idx in peers) {
           peersToJoin.push(peers[idx]);
-          
+
           $log.info("Initiating connection with " + peers[idx] + ' (' + peers[idx] + ')');
           var connection = peer.connect(peers[idx]);
-          
+
           connection.on('open', function() {
             handleConnectionOpen(connection);
             peersToJoin.splice(idx, 1);
-            
+
             if(peersToJoin.length === 0) {
               acceptNewConnections();
               notify('ready');
               joinDeferred.resolve();
             }
           });
-          
+
           connection.on('error', handleConnectionError(connection));
         }
       }
     };
-    
+
     this.getLocalID = function() {
       return peer.id;
     };
@@ -164,9 +164,9 @@
             title = err.type;
             msg = err.message;
           }
-          
+
           break;
-          
+
         case 'peer-unavailable':
           if(state === statesEnum.JOINING) {
             if(peersToJoin.length === 0) {
@@ -185,9 +185,9 @@
             title = err.type;
             msg = err.message;
           }
-          
+
           break;
-        
+
         default:
           title = err.type;
           msg = err.message;
@@ -196,7 +196,7 @@
       if(registerDeferred) {
         registerDeferred.reject({title: title, message: msg});
       }
-      
+
       if(joinDeferred) {
         joinDeferred.reject({title: title, message: msg});
       }
@@ -214,11 +214,11 @@
 
       connection.on('error', handleConnectionError(connection));
     }
-      
+
     function handleConnectionClose(connection) {
       return function() {
         connections.remove(connection.peer);
-        doc.removeParticipant(connection.peer);
+        sharedData.removeParticipant(connection.peer);
         $log.info("Connection with peer " + connection.peer + " closed");
       };
     }
@@ -228,7 +228,7 @@
         $log.info("Connection with peer " + connection.peer + " encountered an error: " + JSON.stringify(err.type));
         alerts.showDanger(err.message, err.type);
         handleConnectionClose(connection);
-        
+
         if(joinDeferred) {
           deferred.reject({title: err.type, message: err.message});
         }
@@ -238,7 +238,7 @@
     function notify(event) {
       var argumentsArray = Array.prototype.slice.apply(arguments);
       argumentsArray.splice(0,1);
-      
+
       if(callbacks[event]) {
         for(var idx in callbacks[event]) {
           callbacks[event][idx].apply(null, argumentsArray);

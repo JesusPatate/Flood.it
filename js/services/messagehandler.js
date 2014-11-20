@@ -1,7 +1,7 @@
 (function() {
   angular.module('floodit').service('messageHandler', [
-    '$log', 'VersionVector', 'connections', 'doc', 'lseq',
-    function($log, VersionVector, connections, doc, lseq) {
+    '$log', 'VersionVector', 'connections', 'sharedData',
+    function($log, VersionVector, connections, sharedData) {
 
     var msgTypesEnum = {
       JREQ: 0,
@@ -53,14 +53,14 @@
     };
 
     this.sendJoin = function(recipient) {
-      sendMessage(recipient, msgTypesEnum.JREQ, {alias: doc.getAlias()});
+      sendMessage(recipient, msgTypesEnum.JREQ, {alias: sharedData.getAlias()});
     };
 
     this.sendReady = function() {
       var neighbours = connections.getNeighbours();
 
       for (var idx in neighbours) {
-        sendMessage(neighbours[idx], msgTypesEnum.READY, {alias: doc.getAlias()});
+        sendMessage(neighbours[idx], msgTypesEnum.READY, {alias: sharedData.getAlias()});
       }
     };
 
@@ -90,9 +90,9 @@
 
     function handleJoinRequest(requester) {
       var param = {
-        title: doc.getTitle(),
-        alias: doc.getAlias(),
-        doc: JSON.stringify(doc.getModel()),
+        title: sharedData.getDocumentTitle(),
+        alias: sharedData.getAlias(),
+        doc: JSON.stringify(sharedData.getDocumentModel()),
         vv: JSON.stringify(versionVector),
         participants: []
       };
@@ -109,18 +109,18 @@
     }
 
     function handleJoinResponse(data, sender) {
-      doc.setTitle(data.title);
-      doc.addParticipant(sender, data.alias);
+      sharedData.setDocumentTitle(data.title);
+      sharedData.addParticipant(sender, data.alias);
 
       notify('buildConnections', data.participants);
     }
 
     function handleReady(data, sender, ack) {
-      doc.addParticipant(sender, data.alias);
+      sharedData.addParticipant(sender, data.alias);
       connections.setReady(sender);
 
       if (ack) {
-        sendMessage(sender, msgTypesEnum.ACK_READY, {alias: doc.getAlias()});
+        sendMessage(sender, msgTypesEnum.ACK_READY, {alias: sharedData.getAlias()});
       }
     }
 
