@@ -142,7 +142,14 @@
 
       angular.element($window).bind('load', function () {
         var windowSize = getWindowHeight();
-        var divHeight = windowSize.h - 240;
+        var divHeight = 0;
+
+        if(windowSize.w >= 768) {
+          divHeight = windowSize.h - 240;
+        }
+        else {
+          divHeight = windowSize.h - 220;
+        }
 
         scope.style = function () {
           return {

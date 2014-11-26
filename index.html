@@ -99,6 +99,15 @@
           <div class="panel-body">
             <h4 class="col-sm-4 hidden-xs">{{doc.getDocumentTitle()}}</h4>
             <h4 class="visible-xs-block col-xs-12 text-center">{{doc.getDocumentTitle()}}</h4>
+            <div class="visible-xs-block col-xs-12 text-center">
+              <accordion>
+                <accordion-group heading="Participants" is-open="accordion.isOpen" is-disabled="accordion.isDisabled">
+                  <ul>
+                    <li ng-repeat="p in doc.getParticipants()">{{p.alias}}</li>
+                  </ul>
+                </accordion-group>
+              </accordion>
+            </div>
           </div>
         </div>
       </div>
@@ -107,7 +116,7 @@
         <div fi-resize-on-load ng-style="style()" ui-ace="{ onLoad : aceLoaded, onChange: aceChanged }" readonly="{{!connected}}"></div>
       </div>
 
-      <div id="participants" class="row">
+      <div id="participants" class="row hidden-xs">
         <div class="panel panel-default col-xs-12">
           <div class="panel-body">
             Participants : <span class="participant" ng-repeat="p in doc.getParticipants()">{{p.alias}}</span>

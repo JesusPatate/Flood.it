@@ -46,6 +46,20 @@ body {
   border: 1px solid #DEDEDE;
 }
 
+accordion .panel-group {
+  margin-top: 1em;
+  margin-bottom: 0px;
+}
+
+accordion ul {
+  padding: 0px;
+  margin-bottom: 0px;
+}
+
+accordion li {
+  display: block;
+}
+
 #participants {
   margin-top: 20px;
 }
