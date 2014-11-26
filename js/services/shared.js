@@ -1,7 +1,7 @@
 "use strict";
 
 (function() {
-  angular.module('floodit').service('sharedData', function() {
+  angular.module('floodit').service('sharedData', ['$log', function($log) {
 
     var callbacks = [];
 
@@ -100,5 +100,5 @@
         callbacks[i]();
       }
     };
-  });
+  }]);
 })();
