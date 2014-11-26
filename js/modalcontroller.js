@@ -5,7 +5,7 @@
 
   app.controller('ModalCtrl', [
     '$scope', '$modal', '$log', function($scope, $modal, $log) {
-      
+
     var scope = $scope;
     var mainScope = scope.$parent;
 
@@ -13,11 +13,11 @@
     scope.inputs = {};
 
     scope.openModal = function (success, failure) {
-      
+
       var modalInstance = $modal.open({
         templateUrl: 'myModalContent.html',
         controller: 'ModalInstanceCtrl',
-        backdrop: true,
+        backdrop: false,
         keyboard: false,
         scope: scope
       });
@@ -30,7 +30,7 @@
 
   app.controller('ModalInstanceCtrl',
     ['$scope', '$modalInstance', function ($scope, $modalInstance) {
-      
+
     $scope.ok = function () {
       if($scope.connectionForm.$valid) {
         $modalInstance.close($scope.inputs);
