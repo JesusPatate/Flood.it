@@ -12,8 +12,9 @@
       ACK_READY: 5
     };
 
-    var networkManager;
     var versionVector;
+    var buffer = [];
+    var forward = [];
 
     var callbacks = {};
 
@@ -46,7 +47,25 @@
           break;
 
         case msgTypesEnum.DATA:
-          handleData(data.param);
+          var vv = data.vv;
+
+          forwardMessage(message);
+
+          if (versionVector.isLower(vv)) { // Already delivered
+            console.log("DBG VV lower: " + JSON.stringify(data.vv) + " < " + JSON.stringify(versionVector));
+          }
+          else {
+            if (!versionVector.isReady(vv)) { // Not causaly ready
+              console.log("DBG not ready: " + JSON.stringify(data.vv) + " > " + JSON.stringify(versionVector));
+              buffer.push(data);
+            }
+            else {
+              versionVector.incrementFrom(vv);
+              handleData(data.param);
+              checkBuffer();
+            }
+          }
+
           break;
 
         default:
@@ -66,6 +85,8 @@
     };
 
     this.sendInsertion = function(couples) {
+      versionVector.increment();
+
       var neighbours = connections.getNeighbours();
 
       for (idx in neighbours) {
@@ -74,6 +95,8 @@
     };
 
     this.sendDeletion = function(ids) {
+      versionVector.increment();
+
       var neighbours = connections.getNeighbours();
 
       for (idx in neighbours) {
@@ -90,6 +113,8 @@
     };
 
     function handleJoinRequest(requester) {
+      forward.push(requester);
+
       var param = {
         title: sharedData.getDocumentTitle(),
         alias: sharedData.getAlias(),
@@ -117,6 +142,8 @@
     }
 
     function handleReady(data, sender, ack) {
+      removeForward(sender);
+
       sharedData.addParticipant(sender, data.alias);
       connections.setReady(sender);
 
@@ -143,14 +170,11 @@
       var msg = {
         error: null,
         data: {
+          vv: versionVector,
           key: key,
           param: param
         }
       };
-
-      if (key === msgTypesEnum.DATA) {
-        versionVector.increment();
-      }
 
       var connection = connections.get(recipient);
 
@@ -177,6 +201,57 @@
       }
 
       $log.info("Sent to " + recipient + ": " + JSON.stringify(msg));
+    }
+
+    function forwardMessage(msg) {
+      for (var idx = 0 ; idx < forward.length ; ++idx) {
+        var connection = connections.get(forward[idx]);
+
+        if(connection) {
+          connection.send(msg);
+        }
+        else {
+          forward.splice(idx, 1);
+        }
+      }
+    }
+
+    function removeForward(id) {
+      var idx = 0;
+      var found = false;
+
+      while (!found && idx < forward.length) {
+        if(forward[idx] === id) {
+          found = true;
+          forward.splice(idx, 1);
+        }
+
+        ++idx;
+      }
+    }
+
+    function checkBuffer() {
+      var idx = 0;
+
+      while(idx < buffer.length) {
+        var op = buffer[idx];
+
+        console.log(op);
+
+        if (versionVector.isLower(vv)) {
+          buffer.splice(idx, 1);
+        }
+        else {
+          if (versionVector.isReady(op.vv)) {
+            handleData(op.param);
+            buffer.splice(idx, 1);
+            idx = 0;
+          }
+          else {
+            ++idx;
+          }
+        }
+      }
     }
 
     function notify(event) {
