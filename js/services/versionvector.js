@@ -1,113 +1,153 @@
 (function() {
   angular.module('floodit').factory('VersionVector', function() {
-    
-    /**
-     * \class VV
-     * \brief the well-known version vector that characterizes causality between
-     * updates
-     * \param e the entry chosen by the local site (1 entry <-> 1 site)
-     */
-    var VersionVector = function(e) {
-      this._entry = e;
-      this._vector = {};
-    };
-    
-    /**
-     * \brief increment the entry of the vector on local update
-     */
-    VersionVector.prototype.increment = function(){
-        if (!(this._entry in this._vector)){
-            this._vector[this._entry] = 0;
-        };
-        
-        this._vector[this._entry] = this._vector[this._entry] + 1;
-    };
-    
-    /**
-     * \brief increment from a remote version vector supposedly ready
-     * \param vv the received version vector
-     */
-    VersionVector.prototype.incrementFrom = function (vv){
-        if (!(vv._entry in this._vector)){
-            this._vector[vv._entry] = 0;
-        };
-        
-        this._vector[vv._entry] = vv._vector[vv._entry]; // if ready, it means + 1 on the entry
-    };
-    
-    /**
-     * \brief check if the target VV is causally ready 
-     * \param vv the version vector to check
-     */
-    VersionVector.prototype.isReady = function(vv){
-      var ready = true;
 
-      // #1 verify that all entry of this._vector exists in vv
-      var keys = Object.keys(this._vector);
-      var i = 0;
+  /**
+   * \class VersionVector
+   * \brief A vector clock that characterizes causality between operations
+   * \param e the entry of the local site (1 entry <-> 1 site)
+   */
+  var VersionVector = function(e) {
+    this._entries = [e];
+    this._clocks = [0];
+  };
 
-      while (ready && i<keys.length){
-        if (!(keys[i] in vv._vector) || (this._vector[keys[i]] > vv._vector[keys[i]])){
-          ready = false;
-        };
+  /**
+   * \brief Increments the local entry
+   */
+  VersionVector.prototype.increment = function() {
+      this._clocks[0] += 1;
+  };
 
-        ++i;
-      };
+  /**
+   * \brief Increments from a remote version vector assumed ready
+   * \param vv a version vector
+   */
+  VersionVector.prototype.incrementFrom = function (vv) {
+      var idxEntry = 1;
+      var found = false;
 
-      // #2 verify that all entry of vv._vector exists in this._vector
-      var keys = Object.keys(vv._vector);
-      var i = 0;
-
-      while (ready && i<keys.length){
-        if ((keys[i]!=vv._entry) &&
-          (!(keys[i] in this._vector) ||
-          (this._vector[keys[i]] > vv._vector[keys[i]]))){
-
-          ready = false;
-        };
-
-        ++i;
-      };
-
-      ready = (ready &&
-        ((vv._vector[vv._entry]==1) ||
-        ((vv._entry in this._vector) &&
-        (vv._vector[vv._entry] == (this._vector[vv._entry] +1) ))));
-
-        return ready;
-    };
-    
-    /**
-     * \brief check if the target vv is strictly lower than the local one. Probably
-     * meaning that the information linked to it has already been delivered
-     * \param vv the version vector to check
-     */
-    VersionVector.prototype.isLower = function(vv){
-      return ((vv._entry in this._vector) && (vv._vector[vv._entry] <= this._vector[vv._entry]));
-    };
-    
-    VersionVector.prototype.clone = function() {
-      var c;
-      
-      if (this._entry.clone != undefined) {
-        c = new VV(this._entry.clone());
-      } else {
-        c = new VV(this._entry);
+      while (!found && idxEntry < this._entries.length) {
+        if (this._entries[idxEntry] === vv._entries[0]) {
+          found = true;
+        }
+        else {
+          ++idxEntry;
+        }
       }
-      
-      c.incrementFrom(this);
-      
-      return c;
-    };
-    
-    VersionVector.prototype.toString = function() {
-      return '{entry: ' + this._entry + ', vector: ' + JSON.stringify(this._vector) + '}';
-    };
-    
-    VersionVector.prototype.toJSON = function() {
-      return JSON.stringify(this._vector);
-    };
-    
+
+      if(!found) {
+        this._entries.push(vv._entries[0]);
+      }
+
+      this._clocks[idxEntry] = vv._clocks[0];
+  };
+
+  /**
+   * \brief Checks if the given version vector is causally ready
+   * \param vv the version vector to check
+   */
+  VersionVector.prototype.isReady = function(vv) {
+    var ready = true;
+
+    // #1 vv._clocks[vv._entries[0]] = this._clocks[vv._entries[0]] + 1
+    {
+      var found = false;
+      var idx = 1;
+
+      while (!found && idx < this._entries.length) {
+        if (this._entries[idx] === vv._entries[0]) {
+          found = true;
+        }
+        else {
+          ++idx;
+        }
+      }
+
+      if(found) {
+        ready = (this._clocks[idx] === vv._clocks[0] - 1);
+      }
+      else {
+        ready = (vv._clocks[0] === 1);
+      }
+    }
+
+    // #2 vv._clocks[i] <= this._clocks[i]
+    {
+      var id, idx, found;
+
+      for (var i = 1 ; i < vv._entries.length && ready ; ++i) {
+        id = vv._entries[i];
+
+        found = false;
+        idx = 0;
+
+        while (!found && idx < this._entries.length) {
+          if (this._entries[idx] === id) {
+            found = true;
+          }
+          else {
+            ++idx;
+          }
+        }
+
+        if (found) {
+          ready = (vv._clocks[i] <= this._clocks[idx]);
+        }
+        else {
+          ready = (vv._clocks[i] === 0);
+        }
+      }
+    }
+
+    return ready;
+  };
+
+  /**
+   * \brief Checks if the given version vector is strictly lower than
+   * this one.
+   *
+   * \param vv the version vector to check
+   */
+  VersionVector.prototype.isLower = function(vv) {
+    // ((vv._entries[0] in this._entries) && (vv._clocks[0] <= this._clocks[vv._entries[0]]));
+
+    var found = false;
+    var idx = 1;
+
+    while (!found && idx < this._entries.length) {
+      if (this._entries[idx] === vv._entries[0]) {
+        found = true;
+      }
+      else {
+        ++idx;
+      }
+    }
+
+    return (found && vv._clocks[0] <= this._clocks[idx]);
+  };
+
+  VersionVector.prototype.clone = function() {
+    var c;
+
+    if (this._entries[0].clone != undefined) {
+      c = new VV(this._entries[0].clone());
+    } else {
+      c = new VV(this._entries[0]);
+    }
+
+    c.incrementFrom(this);
+
+    return c;
+  };
+
+  VersionVector.prototype.toString = function() {
+    return '{entries: ' + this._entries + ', clocks: ' + JSON.stringify(this._clocks) + '}';
+  };
+
+  VersionVector.prototype.toJSON = function() {
+    return {_entries: this._entries, _clocks: this._clocks};
+  };
+
     return VersionVector;
   });
 })();
