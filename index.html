@@ -7,12 +7,21 @@
     <link rel="stylesheet" type="text/css" href="index.css" />
   </head>
 	<body>
-    <div class="container">
+    <div class="container-fluid" ng-controller="MainCtrl">
 
-      <header class="page-header">
-        <div class="navbar navbar-inverse navbar-fixed-top">
+      <header class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+        <div class="container-fluid">
           <div class="navbar-header">
-            <a href="#infos" class="navbar-brand" data-toggle="modal">Flood.it</a>
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse">
+              <span class="sr-only">Toggle navigation</span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+              <span class="icon-bar"></span>
+            </button>
+            <a class="navbar-brand" href="#">FLOOD.IT</a>
+          </div>
+          <div id="navbar-collapse" class="collapse navbar-collapse">
+            <p class="navbar-text navbar-right">Your ID: {{doc.getLocalID() || "not connected"}}</p>
           </div>
         </div>
       </header>
@@ -24,11 +33,12 @@
         </alert>
       </div>
 
-      <div id="serverSide" ng-controller="ServerCtrl">
+      <div id="serverSide" ng-controller="ServerCtrl" ng-hide="connected">
 
-        <div class="row text-center" ng-controller="ModalCtrl" ng-hide="hideConnectBtn">
+        <div class="row text-center" ng-controller="ModalCtrl">
+
           <div class="col-sm-12 form-group">
-            <button id="connectBtn" class="btn btn-default" fi-toggle="button.active" active-text="button.activeText" ng-hide="connected"
+            <button id="connectBtn" class="btn btn-default" fi-toggle="button.active" active-text="button.activeText"
               ng-click="openModal(register, modalDismissed)">
               {{button.text}}
             </button>
@@ -83,24 +93,26 @@
 
       </div> <!--/serverSide-->
 
-      <div id="clientSide" ng-controller="ClientCtrl">
-
-        <div ui-ace="{ onLoad : aceLoaded, onChange: aceChanged }" readonly="{{!connected}}"></div>
-
-        <div id="infoPanel" class="panel panel-default">
+      <div class="row">
+        <div id="infoPanel" class="panel panel-default col-xs-12" ng-show="connected">
           <div class="panel-body">
-            <p>Document title: {{doc.getDocumentTitle()}}</p>
-            <p id="participants">
-              Participants:
-              <ul class="list-inline">
-                <li ng-repeat="p in doc.getParticipants()">{{p.alias}} ({{p.id}})</li>
-              </ul>
-            </p>
-            <p>Your ID: {{doc.getLocalID()}}</p>
+            <h4 class="col-sm-4 hidden-xs">{{doc.getDocumentTitle()}}</h4>
+            <h4 class="visible-xs-block col-12 text-center">{{doc.getDocumentTitle()}}</h4>
           </div>
         </div>
+      </div>
 
-      </div> <!--/clientSide-->
+      <div class="row" ng-controller="EditorCtrl">
+        <div ui-ace="{ onLoad : aceLoaded, onChange: aceChanged }" readonly="{{!connected}}"></div>
+      </div>
+
+      <div class="row">
+        <div class="panel panel-default col-xs-12">
+          <div class="panel-body">
+            Participants : <span class="participant" ng-repeat="p in doc.getParticipants()">{{p.alias}}</span>
+          </div>
+        </div>
+      </div>
 
     </div> <!--/container-->
 

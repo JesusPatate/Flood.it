@@ -10,6 +10,20 @@
     server.addListener('remoteDeletion', editorService.applyDeletion, editorService);
   });
 
+  app.controller('MainCtrl', [
+    '$scope', '$timeout', 'sharedData',
+    function($scope, $timeout, sharedData) {
+      $scope.doc = sharedData;
+
+      sharedData.addListener(function() {
+        // XXX $applyAsinc not available within this version of angular (<1.3.0) :(
+        $timeout(function() {
+          $scope.$apply();
+        }, 100);
+      });
+    }
+  ]);
+
   // Server controller
 
   app.controller('ServerCtrl', [
@@ -99,20 +113,11 @@
     };
   });
 
-  // Client controller
+  // Editor controller
 
-  app.controller('ClientCtrl', [
-    '$scope', '$timeout', 'sharedData', 'editorService',
-    function($scope, $timeout, sharedData, editorService) {
-
-    $scope.doc = sharedData;
-
-    sharedData.addListener(function() {
-      // XXX $applyAsinc not available within this version of angular (<1.3.0) :(
-      $timeout(function() {
-        $scope.$apply();
-      }, 100);
-    });
+  app.controller('EditorCtrl', [
+    '$scope', 'editorService',
+    function($scope, editorService) {
 
     $scope.aceLoaded = function(_editor) {
       editorService.init(_editor);

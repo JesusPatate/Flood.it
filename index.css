@@ -1,13 +1,12 @@
-.ace_editor {
-  border: 1px solid #DEDEDE;
-  overflow: auto;
-  min-height: 300px;
-  resize: vertical;
-  overflow: auto;
+body {
+  padding-top: 70px;
 }
 
-.form-control + .form-control {
-  margin-top : 1em;
+/* http://angular-ui.github.io/bootstrap/ */
+.nav, .pagination, .carousel, .panel-title a { cursor: pointer; }
+
+.navbar-text {
+  margin-right: 0px;
 }
 
 .ng-invalid.ng-dirty {
@@ -18,18 +17,27 @@
   border-color: #CCCCCC;
 }
 
-#serverSide {
-  margin-bottom: 1em;
+#infoPanel h4 {
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
-#infoPanel {
-  margin-top : 1em;
+.ace_editor {
+  border: 1px solid #DEDEDE;
+  overflow: auto;
+  min-height: 300px;
+  resize: vertical;
+  overflow: auto;
+  margin-bottom: 20px;
 }
 
-ul, li, #participants {
-  display: inline;
-}
-
-li {
+.participant {
   margin-left: 1em;
+}
+
+@media screen and (max-width: 767px) {
+  #alerts {
+    left: 1em;
+    width: 90%;
+  }
 }
