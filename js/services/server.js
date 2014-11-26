@@ -3,7 +3,6 @@
 
   app.run(function(server, network, messageHandler, lseq) {
     network.addListener('join', messageHandler.sendJoin, messageHandler);
-    network.addListener('ready', messageHandler.sendReady, messageHandler);
     network.addListener('handleMessage', messageHandler.handle, messageHandler);
     messageHandler.addListener('buildConnections', network.buildConnections, network);
     messageHandler.addListener('remoteInsertion', server.applyInsertion, server);
@@ -16,48 +15,34 @@
 
     var callbacks = {};
 
-    /**
-     * \brief Logs on to the p2p network by registering with the broker server.
-     * \param host address at which the broker server can be reached (IP or domain name)
-     * \param port port at which the broker server can be reached
-     * \return a promise
-     */
-    this.register = function(address, port) {
+    this.connect = function(address, port, joinID) {
       var deferred = $q.defer();
-      var promise = network.register(address, port);
 
-      promise.then(
+      network.register(address, port).then(
         function(id) {
           sharedData.setLocalID(id);
           sharedData.setDocumentModel(lseq);
 
           messageHandler.init(id);
           lseq.init(id);
-          deferred.resolve(id);
+
+          if(joinID) {
+            network.join(joinID).then(
+              function() {
+                network.acceptNewConnections();
+                messageHandler.sendReady();
+                deferred.resolve();
+              },
+              function(err) { // join failed
+                deferred.reject(err);
+            });
+          }
+          else { // No peer to join
+            network.acceptNewConnections();
+            deferred.resolve();
+          }
         },
-        function(err) {
-          alerts.showDanger(err.message, err.title);
-          deferred.reject(err);
-      });
-
-      return deferred.promise;
-    };
-
-    /**
-     * \brief Joins the peers connected to a document.
-     * \param id the identifier of a peer connected to the document
-     * \return a promise
-     */
-    this.join = function(id) {
-      var deferred = $q.defer();
-      var promise = network.join(id);
-
-      promise.then(
-        function() {
-          deferred.resolve();
-        },
-        function(err) {
-          alerts.showDanger(err.message, err.title);
+        function(err) { // register failed
           deferred.reject(err);
       });
 

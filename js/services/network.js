@@ -5,8 +5,9 @@
   var statesEnum = {
     NOT_REGISTERED: 0, // Initial state
     REGISTERING: 1, // When trying to register with the broker server
-    JOINING: 2, // When trying to join a document
-    CONNECTED: 3 // When registered / connected to all other participants
+    REGISTERED: 2, // When trying to register with the broker server
+    JOINING: 3, // When trying to join a document
+    CONNECTED: 4 // When registered / connected to all other participants
   };
 
   angular.module('floodit').service('network', [
@@ -67,9 +68,7 @@
           peer.on('disconnected', function() {});
           peer.on('close', function() {});
 
-          state = statesEnum.CONNECTED;
-          acceptNewConnections();
-
+          state = statesEnum.REGISTERED;
           registerDeferred.resolve(id);
         });
       }
@@ -100,9 +99,7 @@
 
     this.buildConnections = function(peers) {
       if(peers == undefined || peers.length === 0) {
-        // No other peer to join
-        acceptNewConnections();
-        notify('ready');
+        state = statesEnum.CONNECTED;
         joinDeferred.resolve();
       }
       else {
@@ -117,8 +114,7 @@
             peersToJoin.splice(idx, 1);
 
             if(peersToJoin.length === 0) {
-              acceptNewConnections();
-              notify('ready');
+              state = statesEnum.CONNECTED;
               joinDeferred.resolve();
             }
           });
@@ -126,6 +122,14 @@
           connection.on('error', handleConnectionError(connection));
         }
       }
+    };
+
+    this.acceptNewConnections = function() {
+      peer.on('connection', function(connection) {
+        connection.on('open', function() {
+          handleConnectionOpen(connection);
+        });
+      });
     };
 
     this.getLocalID = function() {
@@ -138,14 +142,6 @@
       }
 
       callbacks[event].push(callback);
-    };
-
-    function acceptNewConnections() {
-      peer.on('connection', function(connection) {
-        connection.on('open', function() {
-          handleConnectionOpen(connection);
-        });
-      });
     };
 
     function handlePeerError(err) {
@@ -225,8 +221,7 @@
 
     function handleConnectionError(connection) {
       return function(err) {
-        $log.info("Connection with peer " + connection.peer + " encountered an error: " + JSON.stringify(err.type));
-        alerts.showDanger(err.message, err.type);
+        $log.info("Error encountered by connection with peer " + connection.peer + ": " + JSON.stringify(err.type));
         handleConnectionClose(connection);
 
         if(joinDeferred) {

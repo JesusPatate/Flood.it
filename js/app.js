@@ -44,8 +44,20 @@
     scope.register = function(inputs) {
       userInputs = inputs;
 
-      var registerPromise = server.register(inputs.address, inputs.port);
-      registerPromise.then(registerSuccess, registerFailure);
+      sharedData.setAlias(userInputs.alias);
+      sharedData.setDocumentTitle(userInputs.title);
+
+      var promise = server.connect(inputs.address, inputs.port, inputs.remoteID);
+
+      promise.then(
+        function() {
+          alerts.showSuccess('Connected');
+          mainScope.connected = true;
+        },
+        function(err) {
+          alerts.showDanger(err.message, err.title);
+          scope.button.active = false;
+      });
     };
 
     scope.modalDismissed = function() {
@@ -53,35 +65,6 @@
       $log.error('Connection modal dismissed at: ' + new Date());
       scope.button.active = false;
     };
-
-    function registerSuccess(id) {
-      sharedData.setDocumentTitle(userInputs.title);
-      sharedData.setAlias(userInputs.alias);
-
-      if (userInputs.action === 'join') {
-        join();
-      } else {
-        connected();
-      }
-    }
-
-    function registerFailure(err) {
-      scope.button.active = false;
-    }
-
-    function join() {
-      var joinPromise = server.join(userInputs.remoteID);
-      joinPromise.then(connected, joinFailure);
-    }
-
-    function connected() {
-      alerts.showSuccess('You successfully connected.');
-      mainScope.connected = true;
-    }
-
-    function joinFailure() {
-      scope.button.active = false;
-    }
   }]);
 
   // Editor controller

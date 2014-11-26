@@ -22,7 +22,8 @@
     };
 
     this.handle = function(message, sender) {
-      var data = message.data;
+      var obj = JSON.parse(message);
+      var data = obj.data;
 
       $log.info('Received from ' + sender + ': ' + JSON.stringify(message));
 
@@ -45,10 +46,10 @@
           break;
 
         case msgTypesEnum.DATA:
-          handleData(data.key, data.param, sender);
+          handleData(data.param);
           break;
 
-        case msgTypesEnum.DISC:
+        default:
       }
     };
 
@@ -68,7 +69,7 @@
       var neighbours = connections.getNeighbours();
 
       for (idx in neighbours) {
-        sendMessage(neighbours[idx], msgTypesEnum.DATA, {type: 'insertion', data: JSON.stringify(couples)});
+        sendMessage(neighbours[idx], msgTypesEnum.DATA, {type: 'insertion', data: couples});
       }
     };
 
@@ -76,7 +77,7 @@
       var neighbours = connections.getNeighbours();
 
       for (idx in neighbours) {
-        sendMessage(neighbours[idx], msgTypesEnum.DATA, {type: 'deletion', data: JSON.stringify(ids)});
+        sendMessage(neighbours[idx], msgTypesEnum.DATA, {type: 'deletion', data: ids});
       }
     };
 
@@ -124,14 +125,12 @@
       }
     }
 
-    function handleData(event, data, sender) {
-      data.data = JSON.parse(data.data);
-
-      if(data.type === 'insertion') {
+    function handleData(data) {
+      if (data.type === 'insertion') {
         notify('remoteInsertion', data.data);
       }
       else {
-        if(data.type === 'deletion') {
+        if (data.type === 'deletion') {
           notify('remoteDeletion', data.data);
         }
         else {
@@ -154,7 +153,10 @@
       }
 
       var connection = connections.get(recipient);
-      connection.send(msg);
+
+      if(connection) {
+        connection.send(JSON.stringify(msg));
+      }
 
       $log.info("Sent to " + recipient + ": " + JSON.stringify(msg));
     }
@@ -168,10 +170,13 @@
         data: null
       };
 
-      $log.info("Sent to " + recipient + ": " + JSON.stringify(msg));
-
       var connection = connections.get(recipient);
-      connection.send(msg);
+
+      if(connection) {
+        connection.send(JSON.stringify(msg));
+      }
+
+      $log.info("Sent to " + recipient + ": " + JSON.stringify(msg));
     }
 
     function notify(event) {
