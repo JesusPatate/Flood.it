@@ -84,6 +84,25 @@
     }
   }]);
 
+  // Editor controller
+
+  app.controller('EditorCtrl', [
+    '$scope', 'editorService',
+    function($scope, editorService) {
+
+    $scope.aceLoaded = function(_editor) {
+      editorService.init(_editor);
+      _editor.setBehavioursEnabled(false);
+      _editor.setShowPrintMargin(false);
+      _editor.getSession().setUseWrapMode(true);
+      _editor.getSession().setUseSoftTabs(false);
+    };
+
+    $scope.aceChanged = function(event) {
+      editorService.handle(event);
+    };
+  }]);
+
   app.directive('fiToggle', function() {
     return {
       scope: {
@@ -113,22 +132,26 @@
     };
   });
 
-  // Editor controller
+  app.directive('fiResizeOnLoad', function($window) {
 
-  app.controller('EditorCtrl', [
-    '$scope', 'editorService',
-    function($scope, editorService) {
+    return function(scope, element, attrs) {
 
-    $scope.aceLoaded = function(_editor) {
-      editorService.init(_editor);
-      _editor.setBehavioursEnabled(false);
-      _editor.setShowPrintMargin(false);
-      _editor.getSession().setUseWrapMode(true);
-      _editor.getSession().setUseSoftTabs(false);
+      var getWindowHeight = function() {
+        return {h: $window.innerHeight, w: $window.innerWidth};
+      }
+
+      angular.element($window).bind('load', function () {
+        var windowSize = getWindowHeight();
+        var divHeight = windowSize.h - 240;
+
+        scope.style = function () {
+          return {
+            'height': divHeight + 'px'
+          };
+        };
+
+        scope.$apply();
+      });
     };
-
-    $scope.aceChanged = function(event) {
-      editorService.handle(event);
-    };
-  }]);
+  });
 })();

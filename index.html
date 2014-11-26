@@ -94,20 +94,20 @@
 
       </div> <!--/serverSide-->
 
-      <div class="row">
-        <div id="infoPanel" class="panel panel-default col-xs-12" ng-show="connected">
+      <div class="row" ng-show="connected">
+        <div id="infoPanel" class="panel panel-default col-xs-12">
           <div class="panel-body">
             <h4 class="col-sm-4 hidden-xs">{{doc.getDocumentTitle()}}</h4>
-            <h4 class="visible-xs-block col-12 text-center">{{doc.getDocumentTitle()}}</h4>
+            <h4 class="visible-xs-block col-xs-12 text-center">{{doc.getDocumentTitle()}}</h4>
           </div>
         </div>
       </div>
 
       <div class="row" ng-controller="EditorCtrl">
-        <div ui-ace="{ onLoad : aceLoaded, onChange: aceChanged }" readonly="{{!connected}}"></div>
+        <div fi-resize-on-load ng-style="style()" ui-ace="{ onLoad : aceLoaded, onChange: aceChanged }" readonly="{{!connected}}"></div>
       </div>
 
-      <div class="row">
+      <div id="participants" class="row">
         <div class="panel panel-default col-xs-12">
           <div class="panel-body">
             Participants : <span class="participant" ng-repeat="p in doc.getParticipants()">{{p.alias}}</span>

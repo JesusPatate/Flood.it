@@ -41,12 +41,13 @@ body {
 }
 
 .ace_editor {
-  border: 1px solid #DEDEDE;
   overflow: auto;
-  min-height: 300px;
   resize: vertical;
-  overflow: auto;
-  margin-bottom: 20px;
+  border: 1px solid #DEDEDE;
+}
+
+#participants {
+  margin-top: 20px;
 }
 
 .participant {
