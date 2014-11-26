@@ -7,6 +7,14 @@
     <link rel="stylesheet" type="text/css" href="index.css" />
   </head>
 	<body>
+
+    <div id="alerts" ng-controller="AlertCtrl">
+      <alert ng-repeat="alert in alerts" type="{{alert.type}}" close="closeAlert($index)">
+        <h4>{{alert.title}}</h4>
+        {{alert.message}}
+      </alert>
+    </div>
+
     <div class="container-fluid" ng-controller="MainCtrl">
 
       <header class="navbar navbar-inverse navbar-fixed-top" role="navigation">
@@ -25,13 +33,6 @@
           </div>
         </div>
       </header>
-
-      <div ng-controller="AlertCtrl" class="text-center">
-        <alert ng-repeat="alert in alerts" type="{{alert.type}}" close="closeAlert($index)">
-          <h4>{{alert.title}}</h4>
-          {{alert.message}}
-        </alert>
-      </div>
 
       <div id="serverSide" ng-controller="ServerCtrl" ng-hide="connected">
 

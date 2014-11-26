@@ -1,18 +1,30 @@
 (function() {
   angular.module('floodit').service('alerts', [
-    '$log', function($log) {
-      
+    '$log', '$timeout', function($log, $timeout) {
+
+    var self = this;
+
     var alerts = [];
     var callbacks = [];
 
     this.showSuccess = function(msg, title) {
       alerts.push({type: 'success', title: title, message: msg});
+
+      $timeout(function() {
+        self.hide(alerts.length - 1);
+      }, 3000);
+
       notify();
     };
 
     this.showDanger = function(msg, title) {
       $log.warn('Error (' + title + ') - ' + msg);
       alerts.push({type: 'danger', title: title, message: msg});
+
+      $timeout(function() {
+        self.hide(alerts.length - 1);
+      }, 10000);
+
       notify();
     };
 
