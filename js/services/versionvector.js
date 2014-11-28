@@ -15,7 +15,7 @@
    * \brief Increments the local entry
    */
   VersionVector.prototype.increment = function() {
-      this._clocks[0] += 1;
+    this._clocks[0] += 1;
   };
 
   /**
@@ -23,23 +23,57 @@
    * \param vv a version vector
    */
   VersionVector.prototype.incrementFrom = function (vv) {
-      var idxEntry = 1;
-      var found = false;
+    var idxEntry = 1;
+    var found = false;
 
-      while (!found && idxEntry < this._entries.length) {
-        if (this._entries[idxEntry] === vv._entries[0]) {
+    while (!found && idxEntry < this._entries.length) {
+      if (this._entries[idxEntry] === vv._entries[0]) {
+        found = true;
+      }
+      else {
+        ++idxEntry;
+      }
+    }
+
+    if(!found) {
+      this._entries.push(vv._entries[0]);
+    }
+
+    this._clocks[idxEntry] = vv._clocks[0];
+  };
+
+  /**
+   * \brief Makes the union of this version vector with another one.
+   *
+   * Each entry within this version vector is replaced by the biggest one
+   * of the two vectors. Example: [2, 1, 5] U [1, 4] = [2, 4, 5]
+   *
+   * \param vv another version vector
+   */
+  VersionVector.prototype.union = function(vv) {
+    for (var idxVV = 0 ; idxVV < vv._entries.length ; ++idxVV) {
+      var found = false;
+      var id = vv._entries[idxVV];
+      var idxThis = 1;
+
+      while (!found && idxThis < vv._entries.length) {
+        if (this._entries[idxThis] === id) {
           found = true;
         }
         else {
-          ++idxEntry;
+          ++idxThis;
         }
       }
 
-      if(!found) {
-        this._entries.push(vv._entries[0]);
+      if (found) {
+        this._clocks[idxThis] = Math.max(
+          this._clocks[idxThis], vv._clocks[idxVV]);
       }
-
-      this._clocks[idxEntry] = vv._clocks[0];
+      else {
+        this._entries.push(id);
+        this._clocks.push(vv._clocks[idxVV]);
+      }
+    }
   };
 
   /**
@@ -109,8 +143,6 @@
    * \param vv the version vector to check
    */
   VersionVector.prototype.isLower = function(vv) {
-    // ((vv._entries[0] in this._entries) && (vv._clocks[0] <= this._clocks[vv._entries[0]]));
-
     var found = false;
     var idx = 1;
 

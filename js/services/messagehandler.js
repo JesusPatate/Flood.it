@@ -26,7 +26,7 @@
       var obj = JSON.parse(message);
       var data = obj.data;
 
-      $log.info('Received from ' + sender + ': ' + JSON.stringify(message));
+      $log.info('Received from ' + sender + ': ' + JSON.stringify(obj));
 
       switch(data.key) {
         case msgTypesEnum.JREQ:
@@ -51,18 +51,14 @@
 
           forwardMessage(message);
 
-          if (versionVector.isLower(vv)) { // Already delivered
-            console.log("DBG VV lower: " + JSON.stringify(data.vv) + " < " + JSON.stringify(versionVector));
-          }
-          else {
-            if (!versionVector.isReady(vv)) { // Not causaly ready
-              console.log("DBG not ready: " + JSON.stringify(data.vv) + " > " + JSON.stringify(versionVector));
-              buffer.push(data);
-            }
-            else {
+          if (!versionVector.isLower(vv)) { // Not already delivered
+            if (versionVector.isReady(vv)) {
               versionVector.incrementFrom(vv);
               handleData(data.param);
               checkBuffer();
+            }
+            else { // Not causaly ready
+              buffer.push(data);
             }
           }
 
@@ -118,8 +114,8 @@
       var param = {
         title: sharedData.getDocumentTitle(),
         alias: sharedData.getAlias(),
-        doc: JSON.stringify(sharedData.getDocumentModel()),
-        vv: JSON.stringify(versionVector),
+        doc: sharedData.getDocumentModel(),
+        vv: versionVector,
         participants: []
       };
 
@@ -135,10 +131,12 @@
     }
 
     function handleJoinResponse(data, sender) {
+      versionVector.union(data.vv);
+      notify('remoteInsertion', data.doc);
+      notify('buildConnections', data.participants);
+
       sharedData.setDocumentTitle(data.title);
       sharedData.addParticipant(sender, data.alias);
-
-      notify('buildConnections', data.participants);
     }
 
     function handleReady(data, sender, ack) {
@@ -235,8 +233,6 @@
 
       while(idx < buffer.length) {
         var op = buffer[idx];
-
-        console.log(op);
 
         if (versionVector.isLower(vv)) {
           buffer.splice(idx, 1);
