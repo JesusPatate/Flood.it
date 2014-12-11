@@ -8,7 +8,7 @@
   </head>
 	<body>
 
-    <div id="alerts" ng-controller="AlertCtrl">
+    <div id="alerts" ng-controller="AlertCtrl" ng-cloak>
       <alert ng-repeat="alert in alerts" type="{{alert.type}}" close="closeAlert($index)">
         <h4>{{alert.title}}</h4>
         {{alert.message}}
@@ -29,7 +29,7 @@
             <a class="navbar-brand" href="#">FLOOD.IT</a>
           </div>
           <div id="navbar-collapse" class="collapse navbar-collapse">
-            <p class="navbar-text navbar-right">Your ID: {{doc.getLocalID() || "not connected"}}</p>
+            <p class="navbar-text navbar-right" ng-cloak>Your ID: {{doc.getLocalID() || "not connected"}}</p>
           </div>
         </div>
       </header>
@@ -38,7 +38,7 @@
 
         <div class="row text-center" ng-controller="ModalCtrl">
 
-          <div class="col-sm-12 form-group">
+          <div class="col-sm-12 form-group" ng-cloak>
             <button id="connectBtn" class="btn btn-default" fi-toggle="button.active" active-text="button.activeText"
               ng-click="openModal(register, modalDismissed)">
               {{button.text}}
@@ -95,14 +95,14 @@
       </div> <!--/serverSide-->
 
       <div class="row" ng-show="connected">
-        <div id="infoPanel" class="panel panel-default col-xs-12">
+        <div id="infoPanel" class="panel panel-default col-xs-12" ng-cloak>
           <div class="panel-body">
             <h4 class="col-sm-4 hidden-xs">{{doc.getDocumentTitle()}}</h4>
             <h4 class="visible-xs-block col-xs-12 text-center">{{doc.getDocumentTitle()}}</h4>
             <div class="visible-xs-block col-xs-12 text-center">
               <accordion>
                 <accordion-group heading="Participants" is-open="accordion.isOpen" is-disabled="accordion.isDisabled">
-                  <ul>
+                  <ul ng-cloak>
                     <li ng-repeat="p in doc.getParticipants()">{{p.alias}}</li>
                   </ul>
                 </accordion-group>
@@ -116,7 +116,7 @@
         <div fi-resize-on-load ng-style="style()" ui-ace="{ onLoad : aceLoaded, onChange: aceChanged }" readonly="{{!connected}}"></div>
       </div>
 
-      <div id="participants" class="row hidden-xs">
+      <div id="participants" class="row hidden-xs" ng-cloak>
         <div class="panel panel-default col-xs-12">
           <div class="panel-body">
             Participants : <span class="participant" ng-repeat="p in doc.getParticipants()">{{p.alias}}</span>
